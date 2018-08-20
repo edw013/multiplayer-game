@@ -1,9 +1,14 @@
-// dependencies
-const app = require("express")();
-const http = require("http").Server(app);
-const io = require("socket.io")(http);
+import * as express from "express";
+import * as http from "http";
+import * as socketIo from "socket.io";
+import * as Game from "./Game";
 
-const port = process.env.port || 3000;
+// dependencies
+const app: express.Application = express();
+const server: http.Server = new http.Server(app);
+const io: socketIo.Server = socketIo(http);
+
+const port: String = process.env.port || "3000";
 
 // routing
 app.get("/", function(req, res){
@@ -25,8 +30,6 @@ io.on('connection', function(socket){
     });
 });
 
-http.listen(port, function(){
+server.listen(port, function(){
   console.log("listening on *:", port);
 });
-
-const g = require("./game.js");
