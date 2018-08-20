@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as http from "http";
 import * as socketIo from "socket.io";
-import * as Game from "./Game";
+import Game from "./Game";
 
 // dependencies
 const app: express.Application = express();

@@ -1,4 +1,4 @@
-import * as Player from "./Player";
+import Player from "./Player";
 
 class Tile {
     // up to 4, given players can approach from 4 sides
@@ -39,4 +39,4 @@ class Tile {
     }
 };
 
-export {Tile};
+export default Tile;

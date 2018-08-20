@@ -1,6 +1,6 @@
-import * as User from "./User";
-import * as Player from "./Player";
-import * as Tile from "./Tile";
+import User from "./User";
+import Player from "./Player";
+import Tile from "./Tile";
 
 const BOARD_SCALE: number = 2;
 
@@ -61,9 +61,6 @@ class Game {
         for (let i: number = 0; i < this.numPlayers; i++) {
             this.board[x][y].addPlayer(this.alivePlayers[i]);
 
-            this.alivePlayers[i].setXPos(x);
-            this.alivePlayers[i].setYPos(y);
-
             let remaining: number = 0;
             if (x < sideLength && y == 0) {
                 x += increment;
@@ -101,4 +98,4 @@ class Game {
     }
 };
 
-export {Game}
+export default Game;

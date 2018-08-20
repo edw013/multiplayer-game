@@ -1,4 +1,4 @@
-import * as User from "./User"
+import User from "./User"
 
 class Player {
     private user: User;
@@ -20,4 +20,4 @@ class Player {
     }
 };
 
-export {Player};
+export default Player;

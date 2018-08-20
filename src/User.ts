@@ -2,4 +2,4 @@ class User {
     private id: String;
 }
 
-export {User};
+export default User;
