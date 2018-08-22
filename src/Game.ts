@@ -35,7 +35,7 @@ class Game {
     addPlayer(user: User) {
         this.players.push(user);
 
-        let player: Player = new Player(user);
+        let player: Player = new Player(user.id);
         this.alivePlayers.push(player);
 
         if (this.players.length == this.numPlayers) {
