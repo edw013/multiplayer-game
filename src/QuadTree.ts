@@ -56,7 +56,7 @@ class Node {
         this.objects.push(item);
 
         if (this.objects.length > this.maxObjects && this.level < this.maxLevels) {
-            if (this.nodes.length > 0) {
+            if (this.nodes.length == 0) {
                 this.split();
             }
 
@@ -104,7 +104,7 @@ class Node {
 
         let level = this.level + 1;
         // create new bounds object
-        let bounds;
+        let bounds: any = {};
         bounds.width = splitWidth;
         bounds.height = splitHeight;
 
@@ -170,3 +170,5 @@ class Node {
         return index;
     }
 }
+
+export default QuadTree;

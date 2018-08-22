@@ -4,6 +4,10 @@ class GameObject {
     width: number;
     height: number;
 
+    constructor() {
+
+    }
+    
     getX(): number {
         return this.xPos;
     }

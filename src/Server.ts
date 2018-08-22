@@ -2,6 +2,8 @@ import * as express from "express";
 import * as http from "http";
 import * as socketIo from "socket.io";
 import Engine from "./Engine";
+import QuadTree from "./QuadTree";
+import GameObject from "./GameObject";
 
 // dependencies
 const app: express.Application = express();
