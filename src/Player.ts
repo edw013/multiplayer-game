@@ -1,12 +1,11 @@
-import User from "./User"
+import GameObject from "./GameObject";
+import User from "./User";
 
-class Player {
+class Player extends GameObject {
     private user: User;
     private playerId: string;
     private numKills: number;
     private moveSpeed: number;
-    private xPos: number;
-    private yPos: number;
     private positionBuffer;
     lastProcessedInput;
     moves;
@@ -14,6 +13,7 @@ class Player {
     outlineColor;
 
     constructor(id: string) {
+        super();
         this.playerId = id;
         this.numKills = 0;
         this.moveSpeed = 100;
@@ -36,22 +36,6 @@ class Player {
 
     setPlayerId(playerId: string) {
         this.playerId = playerId;
-    }
-
-    getX(): number {
-        return this.xPos;
-    }
-
-    setX(x: number) {
-        this.xPos = x;
-    }
-
-    getY(): number {
-        return this.yPos;
-    }
-
-    setY(y: number) {
-        this.yPos = y;
     }
 
     incrementKills() {
