@@ -1,5 +1,5 @@
 import * as io from "socket.io-client";
-import Player from "../Player";
+import Player from "./Player";
 
 const TICKRATE: number = 60;
 

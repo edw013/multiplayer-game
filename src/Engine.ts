@@ -1,25 +1,47 @@
 import * as socketIo from "socket.io";
 import Player from "./Player";
+import QuadTree from "./QuadTree";
+import GameObject from "./GameObject";
+import Tile from "./Tile";
 
 const TICKRATE: number = 60;
 
 class Engine {
+    width: number;
+    height: number;
     players: {};
+    tiles: {};
     pendingMoves: {};
     updateInterval;
     updateMessages: any[];
     socket: socketIo.Server;
     updateRate: number;
-
+    tree: QuadTree;
+    tileCounter: number;
 
     constructor(socket: socketIo.Server) {
+        this.width = 800;
+        this.height = 800;
         this.players = {};
+        this.tiles = {};
         this.pendingMoves = {};
         this.updateMessages = [];
         this.socket = socket;
         this.updateRate = TICKRATE;
 
+        this.tree = new QuadTree({x: 0, y: 0, width: this.width, height: this.height}, 4, 10);
+
+        this.tileCounter = 0;
+
         this.setUpdateInterval();
+    }
+
+    getDimensions(): any {
+        let dimensions: any = {};
+        dimensions.width = this.width;
+        dimensions.height = this.height;
+
+        return dimensions;
     }
 
     // add a new player
@@ -31,6 +53,8 @@ class Engine {
         // default settings, will update later
         this.players[id].setX(100);
         this.players[id].setY(100);
+
+        this.tree.insert(player);
 
         this.pendingMoves[id] = [];
 
@@ -45,9 +69,39 @@ class Engine {
         this.socket.emit("removePlayer", id);
     }
 
+    spawnTile() {
+        let x = Math.floor(Math.random() * this.width);
+        let y = Math.floor(Math.random() * this.height);
+
+        let id = this.tileCounter.toString();
+        this.tileCounter++;
+
+        let tile = new Tile(id);
+        tile.setX(x);
+        tile.setY(y);
+
+        this.tiles[id] = tile;
+
+        this.tree.insert(tile);
+
+        this.socket.emit("newTile", {x: x, y: y});
+    }
+
+    removeTile(id: string) {
+        delete this.tiles[id];
+
+        this.socket.emit("removeTile", id);
+
+        this.spawnTile();
+    }
+
     // return all players
     getPlayers() {
         return this.players;
+    }
+
+    getTiles() {
+        return this.tiles;
     }
 
     // add a move to process
@@ -69,12 +123,14 @@ class Engine {
         this.updateInterval = setInterval((function(self) {
             return function() {
                 self.processChanges();
+                self.calculateCollisions();
             };
         })(this), 1000 / this.updateRate); // 60 times / sec
     }
 
     // process all pending
-    processChanges() {       
+    processChanges() {     
+        this.tree.clear();  
         let lastTS;
         for (let key in this.players) {
             let player = this.players[key];
@@ -88,12 +144,63 @@ class Engine {
                 lastTS = move.ts;
                 
             }
-            this.updateMessages.push({playerId: pid, ts: lastTS, x: player.getX(), y: player.getY()});
+
+            this.tree.insert(player);
+            this.updateMessages.push({playerId: pid, ts: lastTS, kills: player.numKills, x: player.getX(), y: player.getY()});
+        }
+
+        for (let key in this.tiles) {
+            this.tree.insert(this.tiles[key]);
         }
 
         // send new server state
         this.socket.emit("gameState", this.updateMessages);
         this.updateMessages = [];
+    }
+
+    calculateCollisions() {
+        for (let key in this.players) {
+            let player = this.players[key];
+
+            let possibleCollisions = this.tree.get(player);
+
+            for (let i = 0; i < possibleCollisions.length; i++) {
+                let obj = possibleCollisions[i];
+
+                let targetX = obj.getX();
+                let targetY = obj.getY();
+                let targetWidth = obj.getWidth();
+                let targetHeight = obj.getHeight();
+
+                // player object is 2 circles
+                if (obj.getObjType() == "player") {
+                    if (obj.getId() == key) {
+                        continue;
+                    }
+                    let dist = Math.sqrt(Math.pow(player.getX() - targetX, 2) + Math.pow(player.getY() - targetY, 2));
+
+                    /*console.log("dist: " + dist);
+                    console.log("player width: " + player.getRadius())
+                    console.log("target width: " + targetWidth);*/
+                    if (dist <= player.getWidth() / 2 + targetWidth / 2) {
+                    }
+                }
+                // tile object is circle and rectangle
+                else if (obj.getObjType() == "tile") {
+                    let tileX = targetX - targetWidth / 2;
+                    let tileY = targetY - targetHeight / 2;
+                    let deltaX = player.getX() - Math.max(tileX, Math.min(player.getX(), tileX + targetWidth));
+                    let deltaY = player.getY() - Math.max(tileY, Math.min(player.getY(), tileY + targetHeight));
+
+                    if (Math.pow(deltaX, 2) + Math.pow(deltaY, 2) < Math.pow(player.getWidth() / 2, 2)) {
+                        // add powerup and remove it
+                        player.applyPowerup(null);
+
+                        this.removeTile(obj.getId());
+                    }
+                }
+            }
+        }
     }
 }
 

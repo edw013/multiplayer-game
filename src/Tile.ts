@@ -1,41 +1,41 @@
-import Player from "./Player";
+import GameObject from "./GameObject";
 
-class Tile {
-    // up to 4, given players can approach from 4 sides
-    private players: Player[];
+const LUCK: number = 0.7;
+const GOOD: string[] = ["star", "gun", "bomb", "ms", "invis"];
+const BAD: string[] = ["fall", "trap", "fire"];
 
-    constructor() {
+class Tile extends GameObject {
+    id: string;
+    type: string;
+    players: any[];
+
+    constructor(id) {
+        super(id);
+
+        this.objType = "tile";
+        this.setHeight(50);
+        this.setWidth(50);
+
+        if (Math.random() > LUCK) {
+            this.type = BAD[Math.floor(Math.random() * BAD.length)];
+        }
+        else {
+            this.type = GOOD[Math.floor(Math.random() * GOOD.length)];
+        }
+
         this.players = [];
     }
 
-    addPlayer(player: Player) {
-        this.players.push(player);
+    getType(): string {
+        return this.type;
     }
 
-    resolveCombat(): Player {
-        let p1: Player = this.players[0];
-        let p2: Player = this.players[1];
-        /*let p1Attack: number = p1.getAttack() / p2.getDefense();
-        let p2Attack: number = p2.getAttack() / p1.getDefense();
+    addPlayer(time, playerId) {
+        this.players.push({ts: time, id: playerId});
+    }
 
-        let odds: number = p1Attack / (p1Attack + p2Attack);
-
-        let roll: number = Math.random();
-
-        if (roll < odds) {
-            p1.incrementKills();
-            p2.toggleAlive();
-
-            return p2;
-        }
-        else {
-            p2.incrementKills();
-            p1.toggleAlive;
-
-            return p1;
-        }*/
-
-        return null;
+    getPlayers(): any[] {
+        return this.players;
     }
 };
 

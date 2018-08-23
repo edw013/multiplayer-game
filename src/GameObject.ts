@@ -1,13 +1,18 @@
 class GameObject {
+    id: string;
     xPos: number;
     yPos: number;
     width: number;
     height: number;
+    objType: string;
 
-    constructor() {
-
+    constructor(id: string) {
+        this.id = id;
     }
-    
+
+    getId(): string {
+        return this.id;
+    }
     getX(): number {
         return this.xPos;
     }
@@ -32,12 +37,16 @@ class GameObject {
         this.width = width;
     }
 
-    getHeight() : number {
+    getHeight(): number {
         return this.height;
     }
 
     setHeight(height: number) {
         this.height = height;
+    }
+
+    getObjType(): string {
+        return this.objType;
     }
 }
 

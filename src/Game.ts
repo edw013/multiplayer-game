@@ -25,7 +25,7 @@ class Game {
         for (let i: number = 0; i < this.boardSize; i++) {
             this.board[i] = [];
             for (let j: number = 0; j < this.boardSize; j++) {
-                this.board[i][j] = new Tile();
+                //this.board[i][j] = new Tile();
             }
         }
 
@@ -59,7 +59,7 @@ class Game {
         let x: number = 0;
         let y: number = 0;
         for (let i: number = 0; i < this.numPlayers; i++) {
-            this.board[x][y].addPlayer(this.alivePlayers[i]);
+            //this.board[x][y].addPlayer(this.alivePlayers[i]);
 
             let remaining: number = 0;
             if (x < sideLength && y == 0) {

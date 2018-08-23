@@ -2,8 +2,6 @@ import * as express from "express";
 import * as http from "http";
 import * as socketIo from "socket.io";
 import Engine from "./Engine";
-import QuadTree from "./QuadTree";
-import GameObject from "./GameObject";
 
 // dependencies
 const app: express.Application = express();
@@ -27,6 +25,8 @@ server.listen(port, function(){
 // create our engine. this will be a room later which will run an engine
 let engine = new Engine(io);
 
+engine.spawnTile();
+
 // socket
 io.on("connection", function(socket){
   console.log("a user connected");
@@ -35,8 +35,17 @@ io.on("connection", function(socket){
   engine.addPlayer(socket.id);
 
   // immediately see other players
-  let data = engine.getPlayers();
-  io.to(socket.id).emit("curPlayers", data);
+  let players = engine.getPlayers();
+  io.to(socket.id).emit("curPlayers", players);
+
+  // immediately see other tiles
+  let tiles = engine.getTiles();
+  io.to(socket.id).emit("curTiles", tiles);
+
+  // resize board
+  let dimensions: any = engine.getDimensions();
+  io.to(socket.id).emit("canvasSize", dimensions);
+
   
   // movement inputs from players
   socket.on("move", function(input) {

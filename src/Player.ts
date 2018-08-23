@@ -4,21 +4,24 @@ import User from "./User";
 class Player extends GameObject {
     private user: User;
     private playerId: string;
-    private numKills: number;
+    numKills: number;
     private moveSpeed: number;
-    private positionBuffer;
     lastProcessedInput;
     moves;
     color;
     outlineColor;
+    buff;
+    radius;
 
     constructor(id: string) {
-        super();
+        super(id);
+        this.objType = "player";
         this.playerId = id;
         this.numKills = 0;
-        this.moveSpeed = 100;
+        this.moveSpeed = 200;
         this.color = this.getRandomColor();
         this.outlineColor = this.getRandomColor();
+        this.width = 60;
     }
 
     getRandomColor() {
@@ -42,10 +45,6 @@ class Player extends GameObject {
         this.numKills++;
     }
 
-    setPositionBuffer(positionBuffer) {
-        this.positionBuffer = positionBuffer;
-    }
-
     applyInput(input) {
         if (input.movement.up) {
             this.yPos -= input.pressTime * this.moveSpeed;
@@ -59,6 +58,14 @@ class Player extends GameObject {
         if (input.movement.right) {
             this.xPos += input.pressTime * this.moveSpeed;
         }
+    }
+
+    applyPowerup(type) {
+        this.numKills++;
+    }
+
+    getWidth() {
+        return this.width;
     }
 };
 
