@@ -1,13 +1,24 @@
 class GameObject {
-    id: string;
-    xPos: number;
-    yPos: number;
-    width: number;
-    height: number;
-    objType: string;
+    protected id: string;
+    protected xPos: number;
+    protected yPos: number;
+    protected width: number;
+    protected height: number;
+    protected color: string;
+    protected outlineColor: string;
+    protected objType: string;
 
     constructor(id: string) {
         this.id = id;
+    }
+
+    getRandomColor(): string {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
     }
 
     getId(): string {
@@ -43,6 +54,14 @@ class GameObject {
 
     setHeight(height: number) {
         this.height = height;
+    }
+
+    getColor(): string {
+        return this.color;
+    }
+
+    getOutlineColor(): string {
+        return this.outlineColor;
     }
 
     getObjType(): string {

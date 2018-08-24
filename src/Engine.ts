@@ -1,18 +1,17 @@
 import * as socketIo from "socket.io";
-import Player from "./Player";
+import Player from "./common/Player";
+import Tile from "./common/Tile";
 import QuadTree from "./QuadTree";
-import GameObject from "./GameObject";
-import Tile from "./Tile";
 
 const TICKRATE: number = 60;
 
 class Engine {
     width: number;
     height: number;
-    players: {};
-    tiles: {};
-    pendingMoves: {};
-    updateInterval;
+    players: any;
+    tiles: any;
+    pendingMoves: any;
+    updateInterval: any;
     updateMessages: any[];
     socket: socketIo.Server;
     updateRate: number;
@@ -70,8 +69,8 @@ class Engine {
     }
 
     spawnTile() {
-        let x = Math.floor(Math.random() * this.width);
-        let y = Math.floor(Math.random() * this.height);
+        let x = Math.floor(Math.random() * (this.width - 100)) + 50;
+        let y = Math.floor(Math.random() * (this.height - 100)) + 50;
 
         let id = this.tileCounter.toString();
         this.tileCounter++;
@@ -105,7 +104,7 @@ class Engine {
     }
 
     // add a move to process
-    addMove(input) {
+    addMove(input: any) {
         let id = input.id;
 
         // i don't think this should be possible but heroku complained so
@@ -135,6 +134,11 @@ class Engine {
         for (let key in this.players) {
             let player = this.players[key];
             let pid = player.playerId;
+
+            if(!this.pendingMoves[pid]) {
+                this.pendingMoves[pid] = [];
+            }
+            
             let moves = this.pendingMoves[pid];
             while(moves.length > 0) {
                 let move = moves.shift();
@@ -146,7 +150,7 @@ class Engine {
             }
 
             this.tree.insert(player);
-            this.updateMessages.push({playerId: pid, ts: lastTS, kills: player.numKills, x: player.getX(), y: player.getY()});
+            this.updateMessages.push({playerId: pid, ts: lastTS, x: player.getX(), y: player.getY()});
         }
 
         for (let key in this.tiles) {

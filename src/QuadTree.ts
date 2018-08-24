@@ -1,4 +1,4 @@
-import GameObject from "./GameObject";
+import GameObject from "./common/GameObject";
 
 // used for better collision checking
 class QuadTree {

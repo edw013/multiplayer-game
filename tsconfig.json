@@ -1,9 +1,12 @@
 {
     "compilerOptions": {
-        "outDir": "build"
+        "outDir": "./build/",
+        "module": "commonjs",
+        "target": "es5",
+        "allowJs": true
     },
     "include": [
         "src/*.ts",
-        "src/static/*.ts"
+        "src/static/*.ts",
     ]
 }

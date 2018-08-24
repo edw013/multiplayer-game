@@ -13,7 +13,7 @@ const port: String = process.env.PORT || "3000";
 app.use(express.static(__dirname + "/static"));
 
 // routing
-app.get("/", function(req, res){
+app.get("/", function(req: any, res: any){
   res.sendFile(__dirname + "/index.html");
 });
 
@@ -28,7 +28,7 @@ let engine = new Engine(io);
 engine.spawnTile();
 
 // socket
-io.on("connection", function(socket){
+io.on("connection", function(socket: any){
   console.log("a user connected");
 
   // todo: another layer above engine, room, which needs to be filled first
@@ -48,7 +48,7 @@ io.on("connection", function(socket){
 
   
   // movement inputs from players
-  socket.on("move", function(input) {
+  socket.on("move", function(input: any) {
       engine.addMove(input);
   });
 
