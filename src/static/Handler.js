@@ -1,3 +1,4 @@
+import io from 'socket.io-client';
 import Client from "../common/Client";
 
 let element = function (id) {
