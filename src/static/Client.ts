@@ -1,5 +1,5 @@
-import Player from "./Player";
-import Tile from "./Tile";
+import Player from "../common/Player";
+import Tile from "../common/Tile";
 
 const TICKRATE: number = 60;
 

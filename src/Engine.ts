@@ -132,8 +132,8 @@ class Engine {
         this.tree.clear();  
         let lastTS;
         for (let key in this.players) {
-            let player = this.players[key];
-            let pid = player.playerId;
+            let player: Player = this.players[key];
+            let pid = player.getId();
 
             if(!this.pendingMoves[pid]) {
                 this.pendingMoves[pid] = [];
@@ -150,7 +150,7 @@ class Engine {
             }
 
             this.tree.insert(player);
-            this.updateMessages.push({playerId: pid, ts: lastTS, x: player.getX(), y: player.getY()});
+            this.updateMessages.push({playerId: pid, ts: lastTS, buffs: player.getBuffs(), x: player.getX(), y: player.getY()});
         }
 
         for (let key in this.tiles) {
@@ -164,7 +164,7 @@ class Engine {
 
     calculateCollisions() {
         for (let key in this.players) {
-            let player = this.players[key];
+            let player: Player = this.players[key];
 
             let possibleCollisions = this.tree.get(player);
 
@@ -181,16 +181,15 @@ class Engine {
                     if (obj.getId() == key) {
                         continue;
                     }
+
                     let dist = Math.sqrt(Math.pow(player.getX() - targetX, 2) + Math.pow(player.getY() - targetY, 2));
 
-                    /*console.log("dist: " + dist);
-                    console.log("player width: " + player.getRadius())
-                    console.log("target width: " + targetWidth);*/
                     if (dist <= player.getWidth() / 2 + targetWidth / 2) {
                     }
                 }
                 // tile object is circle and rectangle
                 else if (obj.getObjType() == "tile") {
+                    let tile: Tile = <Tile> obj;
                     let tileX = targetX - targetWidth / 2;
                     let tileY = targetY - targetHeight / 2;
                     let deltaX = player.getX() - Math.max(tileX, Math.min(player.getX(), tileX + targetWidth));
@@ -198,7 +197,9 @@ class Engine {
 
                     if (Math.pow(deltaX, 2) + Math.pow(deltaY, 2) < Math.pow(player.getWidth() / 2, 2)) {
                         // add powerup and remove it
-                        player.applyPowerup(null);
+                        player.applyPowerup(tile.getType());
+
+                        // start interval?
 
                         this.removeTile(obj.getId());
                     }

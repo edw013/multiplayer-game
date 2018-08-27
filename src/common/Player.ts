@@ -4,6 +4,7 @@ class Player extends GameObject {
     private numKills: number;
     private moveSpeed: number;
     private alive: boolean;
+    private buffs: any[];
 
     constructor(id: string) {
         super(id);
@@ -48,7 +49,17 @@ class Player extends GameObject {
     }
 
     applyPowerup(type: any) {
-        this.numKills++;
+        this.buffs.push(type);
+
+        switch (type) {
+            case "fire":
+                break;
+                
+        }
+    }
+
+    getBuffs(): any[] {
+        return this.buffs;
     }
 };
 
