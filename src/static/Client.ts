@@ -16,7 +16,7 @@ class Client {
     private serverMessages: any[];
     private canvas;
     
-    constructor(socket, canvas, score) {
+    constructor(socket, canvas) {
         this.socket = socket;
         
         this.playerId = this.socket.id;
@@ -57,15 +57,15 @@ class Client {
     }
 
     addPlayer(data) {
-        if (data.playerId == this.playerId) {
+        if (data.id == this.playerId) {
             return;
         }
 
-        let player: Player = new Player(data.playerId);
+        let player: Player = new Player(data.id);
         player.setX(data.x);
         player.setY(data.y);
 
-        this.players[data.playerId] = player;
+        this.players[data.id] = player;
     }
 
     removePlayer(id: string) {
@@ -77,7 +77,7 @@ class Client {
     setPlayers(players) {
         for (let key in players) {
             let player = players[key];
-            let pid = player.playerId;
+            let pid = player.id;
 
             if (pid == this.playerId) {
                 continue;
@@ -122,7 +122,7 @@ class Client {
 
         let input;
         if (this.movement["up"] || this.movement["down"] || this.movement["left"] || this.movement["right"]) {
-            input = {pressTime: pressTime, movement: this.movement, ts: now};
+            input = {id: this.playerId, pressTime: pressTime, movement: this.movement, ts: now};
         }
         else {
             return;
@@ -143,7 +143,7 @@ class Client {
         while(this.serverMessages.length > 0) {
             let message = this.serverMessages.shift();
 
-            let pid = message.playerId;
+            let pid = message.id;
 
             if(pid == this.playerId) {
                 this.updateSelfPosition(message);
@@ -171,11 +171,11 @@ class Client {
     }
 
     updateOtherPosition(message) {
-        if (!this.players[message.playerId]) {
-            this.players[message.playerId] = new Player(message.playerId);
+        if (!this.players[message.id]) {
+            this.players[message.id] = new Player(message.id);
         }
 
-        let player: Player = this.players[message.playerId];
+        let player: Player = this.players[message.id];
         player.setX(message.x);
         player.setY(message.y);
 

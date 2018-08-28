@@ -1,5 +1,5 @@
 import io from 'socket.io-client';
-import Client from "../common/Client";
+import Client from "./Client";
 
 let element = function (id) {
     return document.getElementById(id);
@@ -26,7 +26,7 @@ var socket = io.connect();
 
 var client = null;
 socket.on("connect", () => {
-    client = new Client(socket, element("client_canvas"), element("score"));
+    client = new Client(socket, element("client_canvas"));
 });
 
 socket.on("curPlayers", function(data) {

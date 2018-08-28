@@ -57,7 +57,7 @@ class Engine {
 
         this.pendingMoves[id] = [];
 
-        let message = {playerId: id, x: 100, y: 100};
+        let message = {id: id, x: 100, y: 100};
         this.socket.emit("newPlayer", message);
     }
 
@@ -150,7 +150,7 @@ class Engine {
             }
 
             this.tree.insert(player);
-            this.updateMessages.push({playerId: pid, ts: lastTS, buffs: player.getBuffs(), x: player.getX(), y: player.getY()});
+            this.updateMessages.push({id: pid, ts: lastTS, x: player.getX(), y: player.getY()});
         }
 
         for (let key in this.tiles) {
