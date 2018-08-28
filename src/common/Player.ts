@@ -4,7 +4,10 @@ class Player extends GameObject {
     private numKills: number;
     private moveSpeed: number;
     private alive: boolean;
-    private buffs: any[];
+    private invincible: boolean;
+    private invisible: boolean;
+    private fire: boolean;
+    private ms: boolean;
 
     constructor(id: string) {
         super(id);
@@ -14,7 +17,13 @@ class Player extends GameObject {
         this.color = this.getRandomColor();
         this.outlineColor = this.getRandomColor();
         this.width = 60;
+        this.height = 60;
         this.alive = true;
+
+        this.invincible = false;
+        this.invisible = false;
+        this.fire = false;
+        this.ms = false;
     }
 
     isAlive(): boolean {
@@ -48,18 +57,43 @@ class Player extends GameObject {
         }
     }
 
-    applyPowerup(type: any) {
-        this.buffs.push(type);
+    addPowerup(type: string) {
+        // change invincibility or ammo or whatever
+        this.togglePowerups(type, true);
+    }
 
+    removePowerup(type: string) {
+        // unset invincibility or ammo or whatever
+        this.togglePowerups(type, false);
+    }
+
+    togglePowerups(type: string, toggle: boolean) {
         switch (type) {
-            case "fire":
+            case "star":
+                this.invincible = toggle;
                 break;
-                
+            case "invis":
+                this.invisible = toggle;
+                break;
+            case "fire":
+                this.fire = toggle;
+                break;
+            case "ms":
+                this.ms = toggle;
+
+                if (this.ms) {
+                    this.moveSpeed *= 2;
+                }
+                else {
+                    this.moveSpeed /= 2;
+                }
+
+                break;
         }
     }
 
-    getBuffs(): any[] {
-        return this.buffs;
+    isInvisible(): boolean {
+        return this.invisible;
     }
 };
 

@@ -197,15 +197,23 @@ class Engine {
 
                     if (Math.pow(deltaX, 2) + Math.pow(deltaY, 2) < Math.pow(player.getWidth() / 2, 2)) {
                         // add powerup and remove it
-                        player.applyPowerup(tile.getType());
-
-                        // start interval?
+                        this.addPowerup(player.getId(), tile.getType());
 
                         this.removeTile(obj.getId());
                     }
                 }
             }
         }
+    }
+
+    addPowerup(id: string, type: string) {
+        let player = this.players[id];
+
+        player.addPowerup(type);
+
+        this.socket.emit("addPowerup", {id: id, type: type});
+
+        // start interval
     }
 }
 

@@ -58,6 +58,10 @@ socket.on("removeTile", function(id) {
     client.removeTile(id);
 });
 
+socket.on("addPowerup", function(message) {
+    client.addPowerup(message);
+})
+
 socket.on("gameState", function(data) {
     for (let i = 0; i < data.length; i++) {
         client.serverMessages.push(data[i]);

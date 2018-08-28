@@ -160,9 +160,6 @@ class Client {
         this.player.setX(message.x);
         this.player.setY(message.y);
 
-        // let's power up!
-        this.player.applyPowerup(message.powerup);
-
         this.savedMoves = this.savedMoves.filter(savedMove => {savedMove.ts > serverTS});
 
         this.savedMoves.forEach(savedMove => {
@@ -178,8 +175,18 @@ class Client {
         let player: Player = this.players[message.id];
         player.setX(message.x);
         player.setY(message.y);
+    }
 
-        //player.applyPowerup(message.powerup);
+    addPowerup(message) {
+        let player = this.players[message.id];
+
+        player.addPowerup(message.type);
+    }
+
+    removePowerup(message) {
+        let player = this.players[message.id];
+
+        player.removePowerup(message.type);
     }
 
     repaint() {
@@ -189,8 +196,17 @@ class Client {
         for (let key in this.players) {
             let player: Player = this.players[key];
 
-            if(!player.isAlive()) {
+            if (!player.isAlive()) {
                 return;
+            }
+
+            if (player.isInvisible()) {
+                if (this.playerId == player.getId()) {
+                    ctx.globalAlpha = 0.5;
+                }
+                else {
+                    ctx.globalAlpha = 0;
+                }
             }
 
             let radius = player.getWidth() / 2;
@@ -199,11 +215,15 @@ class Client {
 
             ctx.beginPath();
             ctx.arc(x, y, radius, 0, 2*Math.PI, false);
+
             ctx.fillStyle = player.getColor();
-            ctx.fill();
-            ctx.lineWidth = 5;
             ctx.strokeStyle = player.getOutlineColor();
+            ctx.lineWidth = 5;
+
+            ctx.fill();
             ctx.stroke();
+
+            ctx.globalAlpha = 1;
         }
 
         for (let key in this.tiles) {
@@ -214,10 +234,12 @@ class Client {
     
             ctx.beginPath();
             ctx.rect(topLeftX, topLeftY, tile.getWidth(), tile.getHeight());
+
             ctx.fillStyle = tile.getColor();
-            ctx.fill();
-            ctx.lineWidth = 5;
             ctx.strokeStyle = tile.getOutlineColor();
+            ctx.lineWidth = 5;
+            
+            ctx.fill();
             ctx.stroke(); 
         }
     }

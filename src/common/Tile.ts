@@ -23,6 +23,8 @@ class Tile extends GameObject {
         else {
             this.type = GOOD[Math.floor(Math.random() * GOOD.length)];
         }
+
+        this.type = "invis";
     }
 
     getType(): string {
