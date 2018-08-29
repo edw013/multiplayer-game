@@ -18,7 +18,7 @@ class Engine {
     tree: QuadTree;
     tileCounter: number;
     itemQueue: string[];
-    pendingDeaths: string[];
+    pendingDeaths: any[];
 
     constructor(socket: socketIo.Server) {
         this.width = 500;
@@ -167,8 +167,8 @@ class Engine {
     }
 
     calculateCollisions() {
-        for (let key in this.players) {
-            let player: Player = this.players[key];
+        for (let pid in this.players) {
+            let player: Player = this.players[pid];
 
             let possibleCollisions = this.tree.get(player);
 
@@ -182,13 +182,14 @@ class Engine {
 
                 // player object is collision between 2 circles
                 if (obj.getObjType() == "player") {
-                    if (obj.getId() == key) {
+                    if (obj.getId() == pid) {
                         continue;
                     }
 
                     let dist = Math.sqrt(Math.pow(player.getX() - targetX, 2) + Math.pow(player.getY() - targetY, 2));
 
                     if (dist <= player.getWidth() / 2 + targetWidth / 2) {
+                        this.playerCollision(player.getId(), obj.getId());
                     }
                 }
                 // tile object is collision between a circle and a rectangle
@@ -209,6 +210,39 @@ class Engine {
         }
     }
 
+    playerCollision(p1: string, p2: string) {
+        let player1: Player = this.players[p1];
+        let player2: Player = this.players[p2];
+
+        if (player1.isInvincible()) {
+            if (!player2.isInvincible()) {
+                player2.die("you touched an invincible player");
+            }
+        }
+
+        if (player1.isFire()) {
+            if (!player2.isInvincible()) {
+                if (!player2.isFire()) {
+                    player2.die("someone lit you on fire!");
+                }
+            }
+        }
+
+        if (player2.isInvincible()) {
+            if (!player1.isInvincible()) {
+                player1.die("you touched an invincible player");
+            }
+        }
+
+        if (player2.isFire()) {
+            if (!player1.isInvincible()) {
+                if (!player1.isFire()) {
+                    player1.die("someone lit you on fire");
+                }
+            }
+        }
+    }
+
     tileCollision(pid: string, tid: string) {
         let player: Player = this.players[pid];
         let tile: Tile = this.tiles[tid]
@@ -220,12 +254,7 @@ class Engine {
 
         console.log(tile.getType());
 
-        if (tile.getType() == "fall") {
-            player.die();  
-        }
-        else {
-            player.addItem(tile.getType());
-        }
+        player.addItem(tile.getType());
 
         this.removeTile(tid);
     }
@@ -241,7 +270,7 @@ class Engine {
 
             if (!player.isAlive()) {
                 if (player.isRecentDead()) {
-                    this.pendingDeaths.push(pid);
+                    this.pendingDeaths.push({id: pid, reason: player.getDeathReason()});
 
                     player.resetRecentDead();
                 }
@@ -250,7 +279,7 @@ class Engine {
                 }
             }
 
-            this.updateMessages.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), x: player.getX(), y: player.getY()});
+            this.updateMessages.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY()});
         }
 
         this.sendPendingDeaths();

@@ -14,6 +14,7 @@ class Player extends GameObject {
     private buffTimer: any;
     private debuffs: any;
     private debuffTimer: any;
+    private deathReason: string;
 
     constructor(id: string) {
         super(id);
@@ -52,10 +53,15 @@ class Player extends GameObject {
         this.recentDead = false;
     }
 
-    die() {
+    die(reason: string) {
         this.alive = false;
     
         this.recentDead = true;
+        this.deathReason = reason;
+    }
+
+    getDeathReason() {
+        return this.deathReason;
     }
 
     getLastTS(): any {
@@ -99,7 +105,10 @@ class Player extends GameObject {
 
     addItem(type: string) {
         // bad ones are instant use, others are stored
-        if (type == "trap") {
+        if (type == "fall") {
+            this.die("you fell to your death");
+        }
+        else if (type == "trap") {
             this.moveSpeed = 0;
             this.debuffs.trapped = true;
 
@@ -119,9 +128,9 @@ class Player extends GameObject {
 
             this.debuffTimer = setTimeout((function(self) {
                 return function() {
-                    self.die();
+                    self.die("you burned to death");
                 };
-            })(this), 1000 * 15);
+            })(this), 1000 * 5);
         }
         else {
             this.item = type;
@@ -157,6 +166,14 @@ class Player extends GameObject {
 
     setPowerups(powerups: any) {
         this.powerupBuffs = powerups;
+    }
+
+    getDebuffs(): any {
+        return this.debuffs;
+    }
+
+    setDebuffs(debuffs: any) {
+        this.debuffs = debuffs;
     }
 
     applyPowerup() {

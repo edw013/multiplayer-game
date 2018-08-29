@@ -14,11 +14,13 @@ class Client {
     private movement: {};
     private savedMoves: any[];
     private serverMessages: any[];
-    private serverDeaths: string[];
+    private serverDeaths: any[];
     private canvas;
     private powerup;
+    private debuff;
+    private deathMessage;
     
-    constructor(socket, canvas, powerup) {
+    constructor(socket, canvas, powerup, debuff, deathMessage) {
         this.socket = socket;
         
         this.playerId = this.socket.id;
@@ -46,6 +48,8 @@ class Client {
 
         this.canvas = canvas;
         this.powerup = powerup;
+        this.debuff = debuff;
+        this.deathMessage = deathMessage;
     }
 
     setUpdateInterval() {
@@ -88,7 +92,9 @@ class Client {
             this.players[pid] = new Player(pid);
             this.players[pid].setX(player.xPos);
             this.players[pid].setY(player.yPos);
-            this.players[pid].setAlive(player.alive);
+            if (!player.alive) {
+                this.players[pid].die();
+            }
         }
     }
 
@@ -115,8 +121,8 @@ class Client {
         }
     }
 
-    addServerDeath(id) {
-        this.serverDeaths.push(id);
+    addServerDeath(data) {
+        this.serverDeaths.push(data);
     }
 
     updatePositions() {
@@ -146,10 +152,15 @@ class Client {
 
     processServerPositions() {
         while (this.serverDeaths.length > 0) {
-            let pid = this.serverDeaths.shift();
+            let data = this.serverDeaths.shift();
+            let pid = data.id;
             let player: Player = this.players[pid];
 
-            player.die();
+            player.die(data.reason);
+
+            if (pid == this.playerId) {
+                this.deathMessage.innerHTML = data.reason;
+            }
         }
 
         while(this.serverMessages.length > 0) {
@@ -175,6 +186,9 @@ class Client {
         this.player.setPowerups(message.powerups);
         this.powerup.innerHTML = message.item;
 
+        this.player.setDebuffs(message.debuffs);
+        this.setDebuffMessage();
+
         this.savedMoves = this.savedMoves.filter(savedMove => {savedMove.ts > serverTS});
 
         this.savedMoves.forEach(savedMove => {
@@ -193,10 +207,25 @@ class Client {
         player.setY(message.y);
 
         player.setPowerups(message.powerups);
+        player.setDebuffs(message.debuffs);
     }
 
     useItem() {
         this.socket.emit("useItem", this.playerId);
+    }
+
+    setDebuffMessage() {
+        let debuffs = this.player.getDebuffs();
+
+        if (debuffs.fire) {
+            this.debuff.innerHTML = "Fire!";
+        }
+        else if (debuffs.trapped) {
+            this.debuff.innerHTML = "Trapped!";
+        }
+        else {
+            this.debuff.innerHTML = "none";
+        }
     }
 
     repaint() {
