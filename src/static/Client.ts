@@ -149,8 +149,7 @@ class Client {
             let pid = this.serverDeaths.shift();
             let player: Player = this.players[pid];
 
-            player.setAlive(false);
-            console.log(this.player.isAlive());
+            player.die();
         }
 
         while(this.serverMessages.length > 0) {
@@ -233,6 +232,12 @@ class Client {
             }
             else if (player.isFire()) {
                 ctx.strokeStyle = "red";
+            }
+            else if (player.isMs()) {
+                ctx.strokeStyle = "blue";
+            }
+            else if (player.isTrapped()) {
+                ctx.strokeStyle = "black";
             }
             else {
                 ctx.strokeStyle = player.getOutlineColor();

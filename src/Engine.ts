@@ -129,7 +129,6 @@ class Engine {
                 self.processItemUses();
                 self.processChanges();
                 self.calculateCollisions();
-                self.sendPendingDeaths();
                 self.sendGameState();
             };
         })(this), 1000 / this.updateRate); // 60 times / sec
@@ -219,10 +218,10 @@ class Engine {
             return;
         }
 
-        if (tile.getType() == "fall") {
-            player.setAlive(false);
+        console.log(tile.getType());
 
-            this.pendingDeaths.push(pid);
+        if (tile.getType() == "fall") {
+            player.die();  
         }
         else {
             player.addItem(tile.getType());
@@ -241,11 +240,20 @@ class Engine {
             let player = this.players[pid];
 
             if (!player.isAlive()) {
-                continue;
+                if (player.isRecentDead()) {
+                    this.pendingDeaths.push(pid);
+
+                    player.resetRecentDead();
+                }
+                else {
+                    continue;
+                }
             }
 
             this.updateMessages.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), x: player.getX(), y: player.getY()});
         }
+
+        this.sendPendingDeaths();
 
         // send new server state
         this.socket.emit("gameState", this.updateMessages);

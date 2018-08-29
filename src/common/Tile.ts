@@ -1,7 +1,7 @@
 import GameObject from "./GameObject";
 
 const LUCK: number = 0.7;
-const GOOD: string[] = ["star", "gun", "bomb", "ms", "invis"];
+const GOOD: string[] = ["star", "ms", "invis"];
 const BAD: string[] = ["fall", "trap", "fire"];
 
 class Tile extends GameObject {
@@ -23,9 +23,6 @@ class Tile extends GameObject {
         else {
             this.type = GOOD[Math.floor(Math.random() * GOOD.length)];
         }
-
-        let prob = Math.random();
-        this.type = "fire";
     }
 
     getType(): string {
