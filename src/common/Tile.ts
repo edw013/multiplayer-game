@@ -24,7 +24,8 @@ class Tile extends GameObject {
             this.type = GOOD[Math.floor(Math.random() * GOOD.length)];
         }
 
-        this.type = "invis";
+        let prob = Math.random();
+        this.type = "fire";
     }
 
     getType(): string {

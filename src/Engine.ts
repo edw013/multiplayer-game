@@ -18,6 +18,7 @@ class Engine {
     tree: QuadTree;
     tileCounter: number;
     itemQueue: string[];
+    pendingDeaths: string[];
 
     constructor(socket: socketIo.Server) {
         this.width = 500;
@@ -34,6 +35,7 @@ class Engine {
         this.tileCounter = 0;
 
         this.itemQueue = [];
+        this.pendingDeaths = [];
 
         this.setUpdateInterval();
     }
@@ -127,6 +129,7 @@ class Engine {
                 self.processItemUses();
                 self.processChanges();
                 self.calculateCollisions();
+                self.sendPendingDeaths();
                 self.sendGameState();
             };
         })(this), 1000 / this.updateRate); // 60 times / sec
@@ -211,16 +214,26 @@ class Engine {
         let player: Player = this.players[pid];
         let tile: Tile = this.tiles[tid]
 
+        // can't pick up powerups when on fire
+        if (player.isFire()) {
+            return;
+        }
+
         if (tile.getType() == "fall") {
             player.setAlive(false);
 
-            this.socket.emit("death", pid);
+            this.pendingDeaths.push(pid);
         }
         else {
             player.addItem(tile.getType());
         }
 
         this.removeTile(tid);
+    }
+
+    sendPendingDeaths() {
+        this.socket.emit("death", this.pendingDeaths);
+        this.pendingDeaths = [];
     }
 
     sendGameState() {
@@ -256,14 +269,6 @@ class Engine {
 
             player.useItem();
         }
-    }
-
-    removePowerup(id: string, type: string) {
-        let player = this.players[id];
-
-        player.removePowerup(type);
-
-        this.socket.emit("removePowerup", {id: id, type: type});
     }
 }
 

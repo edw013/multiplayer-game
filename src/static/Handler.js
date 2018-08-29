@@ -60,8 +60,10 @@ socket.on("removeTile", function(id) {
     client.removeTile(id);
 });
 
-socket.on("death", function(id) {
-    client.addServerDeath(id);
+socket.on("death", function(data) {
+    for (let i = 0; i < data.length; i++) {
+        client.addServerDeath(data[i]);
+    }
 });
 
 socket.on("gameState", function(data) {

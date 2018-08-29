@@ -10,6 +10,7 @@ class Player extends GameObject {
     private weapon: string;
     private powerup: string;
     private powerupBuffs: any;
+    private buffTimer: any;
 
     constructor(id: string) {
         super(id);
@@ -138,6 +139,13 @@ class Player extends GameObject {
         this.powerup = this.item;
         this.item = "none";
         this.itemType = null;
+
+        // start timer
+        this.buffTimer = setTimeout((function(self) {
+            return function() {
+                self.removePowerup(self.powerup);
+            };
+        })(this), 1000 * 15);
     }
 
     removePowerup(type: string) {
@@ -145,6 +153,8 @@ class Player extends GameObject {
         this.togglePowerups(type, false);
 
         this.powerup = null;
+
+        clearTimeout(this.buffTimer);
     }
 
     togglePowerups(type: string, toggle: boolean) {
@@ -174,6 +184,14 @@ class Player extends GameObject {
 
     isInvisible(): boolean {
         return this.powerupBuffs.invisible;
+    }
+
+    isInvincible(): boolean {
+        return this.powerupBuffs.invincible;
+    }
+
+    isFire(): boolean {
+        return this.powerupBuffs.fire;
     }
 };
 

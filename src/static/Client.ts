@@ -150,6 +150,7 @@ class Client {
             let player: Player = this.players[pid];
 
             player.setAlive(false);
+            console.log(this.player.isAlive());
         }
 
         while(this.serverMessages.length > 0) {
@@ -195,30 +196,8 @@ class Client {
         player.setPowerups(message.powerups);
     }
 
-    addItem(message) {
-        if (message.id == this.playerId) {
-            this.powerup.innerHTML = message.type;
-        }
-
-        let player = this.players[message.id];
-
-        player.addItem(message.type);
-    }
-
     useItem() {
         this.socket.emit("useItem", this.playerId);
-    }
-
-    applyPowerup(message) {
-        let player = this.players[message.id];
-
-        player.applyPowerup(message.type);
-    }
-
-    removePowerup(message) {
-        let player = this.players[message.id];
-
-        player.removePowerup(message.type);
     }
 
     repaint() {
@@ -231,6 +210,14 @@ class Client {
             if (!player.isAlive()) {
                 continue;
             }
+            
+            let radius = player.getWidth() / 2;
+            let x = player.getX();
+            let y = player.getY();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2*Math.PI, false);
 
             if (player.isInvisible()) {
                 if (this.playerId == player.getId()) {
@@ -241,21 +228,23 @@ class Client {
                 }
             }
 
-            let radius = player.getWidth() / 2;
-            let x = player.getX();
-            let y = player.getY();
-
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, 2*Math.PI, false);
+            if (player.isInvincible()) {
+                ctx.strokeStyle = "yellow";
+            }
+            else if (player.isFire()) {
+                ctx.strokeStyle = "red";
+            }
+            else {
+                ctx.strokeStyle = player.getOutlineColor();
+            }
 
             ctx.fillStyle = player.getColor();
-            ctx.strokeStyle = player.getOutlineColor();
             ctx.lineWidth = 5;
 
             ctx.fill();
             ctx.stroke();
 
-            ctx.globalAlpha = 1;
+            ctx.restore();
         }
 
         for (let key in this.tiles) {
@@ -264,6 +253,7 @@ class Client {
             let topLeftX = tile.getX() - tile.getWidth() / 2;
             let topLeftY = tile.getY() - tile.getHeight() / 2;
     
+            ctx.save();
             ctx.beginPath();
             ctx.rect(topLeftX, topLeftY, tile.getWidth(), tile.getHeight());
 
@@ -272,7 +262,8 @@ class Client {
             ctx.lineWidth = 5;
             
             ctx.fill();
-            ctx.stroke(); 
+            ctx.stroke();
+            ctx.restore();
         }
     }
 }
