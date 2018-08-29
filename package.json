@@ -4,7 +4,8 @@
   "description": "A fun(?) way to make decisions.",
   "main": "app.js",
   "scripts": {
-    "build": "tsc && webpack && cp src/static/*.html build/static/"
+    "build": "tsc && webpack && cp src/static/*.html build/static/",
+    "run": "node build/Server.js"
   },
   "repository": {
     "type": "git",

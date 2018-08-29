@@ -14,9 +14,11 @@ class Client {
     private movement: {};
     private savedMoves: any[];
     private serverMessages: any[];
+    private serverDeaths: string[];
     private canvas;
+    private powerup;
     
-    constructor(socket, canvas) {
+    constructor(socket, canvas, powerup) {
         this.socket = socket;
         
         this.playerId = this.socket.id;
@@ -40,8 +42,10 @@ class Client {
         this.savedMoves = [];
 
         this.serverMessages = [];
+        this.serverDeaths = [];
 
         this.canvas = canvas;
+        this.powerup = powerup;
     }
 
     setUpdateInterval() {
@@ -70,8 +74,6 @@ class Client {
 
     removePlayer(id: string) {
         delete this.players[id];
-
-        this.repaint();
     }
 
     setPlayers(players) {
@@ -86,6 +88,7 @@ class Client {
             this.players[pid] = new Player(pid);
             this.players[pid].setX(player.xPos);
             this.players[pid].setY(player.yPos);
+            this.players[pid].setAlive(player.alive);
         }
     }
 
@@ -99,8 +102,6 @@ class Client {
 
     removeTile(id: string) {
         delete this.tiles[id];
-
-        this.repaint();
     }
 
     setTiles(tiles) {
@@ -112,6 +113,10 @@ class Client {
             this.tiles[id].setX(tile.xPos);
             this.tiles[id].setY(tile.yPos);
         }
+    }
+
+    addServerDeath(id) {
+        this.serverDeaths.push(id);
     }
 
     updatePositions() {
@@ -140,6 +145,13 @@ class Client {
     }
 
     processServerPositions() {
+        while (this.serverDeaths.length > 0) {
+            let pid = this.serverDeaths.shift();
+            let player: Player = this.players[pid];
+
+            player.setAlive(false);
+        }
+
         while(this.serverMessages.length > 0) {
             let message = this.serverMessages.shift();
 
@@ -160,6 +172,9 @@ class Client {
         this.player.setX(message.x);
         this.player.setY(message.y);
 
+        this.player.setPowerups(message.powerups);
+        this.powerup.innerHTML = message.item;
+
         this.savedMoves = this.savedMoves.filter(savedMove => {savedMove.ts > serverTS});
 
         this.savedMoves.forEach(savedMove => {
@@ -173,14 +188,31 @@ class Client {
         }
 
         let player: Player = this.players[message.id];
+
         player.setX(message.x);
         player.setY(message.y);
+
+        player.setPowerups(message.powerups);
     }
 
-    addPowerup(message) {
+    addItem(message) {
+        if (message.id == this.playerId) {
+            this.powerup.innerHTML = message.type;
+        }
+
         let player = this.players[message.id];
 
-        player.addPowerup(message.type);
+        player.addItem(message.type);
+    }
+
+    useItem() {
+        this.socket.emit("useItem", this.playerId);
+    }
+
+    applyPowerup(message) {
+        let player = this.players[message.id];
+
+        player.applyPowerup(message.type);
     }
 
     removePowerup(message) {
@@ -197,7 +229,7 @@ class Client {
             let player: Player = this.players[key];
 
             if (!player.isAlive()) {
-                return;
+                continue;
             }
 
             if (player.isInvisible()) {

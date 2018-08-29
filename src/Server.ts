@@ -52,6 +52,10 @@ io.on("connection", function(socket: any){
       engine.addMove(input);
   });
 
+  socket.on("useItem", function(id: string) {
+    engine.itemUse(id);
+  });
+
   socket.on("disconnect", function(){
     engine.removePlayer(socket.id);
     console.log("a user disconnected");

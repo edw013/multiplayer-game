@@ -2,6 +2,7 @@ const path = require("path");
 
 module.exports = {
     entry: "./src/static/Handler.js",
+    mode: "development",
     module: {
         rules: [
             {

@@ -4,10 +4,12 @@ class Player extends GameObject {
     private numKills: number;
     private moveSpeed: number;
     private alive: boolean;
-    private invincible: boolean;
-    private invisible: boolean;
-    private fire: boolean;
-    private ms: boolean;
+    private lastTS: any;
+    private item: string;
+    private itemType: string;
+    private weapon: string;
+    private powerup: string;
+    private powerupBuffs: any;
 
     constructor(id: string) {
         super(id);
@@ -19,15 +21,31 @@ class Player extends GameObject {
         this.width = 60;
         this.height = 60;
         this.alive = true;
+        this.lastTS = Date.now();
 
-        this.invincible = false;
-        this.invisible = false;
-        this.fire = false;
-        this.ms = false;
+        this.item = "none";
+
+        this.powerupBuffs = {};
+        this.powerupBuffs.invincible = false;
+        this.powerupBuffs.invisible = false;
+        this.powerupBuffs.ms = false;
+        this.powerupBuffs.fire = false;
     }
 
     isAlive(): boolean {
         return this.alive;
+    }
+
+    setAlive(alive: boolean) {
+        this.alive = alive;
+    }
+
+    getLastTS(): any {
+        return this.lastTS;
+    }
+
+    setLastTS(ts: any) {
+        this.lastTS = ts;
     }
 
     incrementKills() {
@@ -57,31 +75,93 @@ class Player extends GameObject {
         }
     }
 
-    addPowerup(type: string) {
+    hasItem(): boolean {
+        return !(this.item == null);
+    }
+
+    addItem(type: string) {
+        // bad ones are instant use, others are stored
+        if (type == "trap") {
+            this.moveSpeed = 0;
+
+            return;
+        }
+        else if (type == "fire") {
+            this.powerupBuffs.fire = true;
+
+            return;
+        }
+
+        this.item = type;
+        this.itemType = "powerup";
+    }
+
+    getItem(): string {
+        return this.item;
+    }
+
+    useItem(): string {
+        if (!this.item) {
+            return;
+        }
+
+        if (this.itemType == "powerup") {
+            this.applyPowerup();
+        }
+        else {
+            // apply weapon
+            return;
+        }
+    }
+
+    getPowerup(): string {
+        return this.powerup;
+    }
+
+    getPowerups(): any {
+        return this.powerupBuffs;
+    }
+
+    setPowerups(powerups: any) {
+        this.powerupBuffs = powerups;
+    }
+
+    applyPowerup() {
+        // one buff at a time
+        if (this.powerup) {
+            this.removePowerup(this.powerup);
+        }
+
         // change invincibility or ammo or whatever
-        this.togglePowerups(type, true);
+        this.togglePowerups(this.item, true);
+            
+        this.powerup = this.item;
+        this.item = "none";
+        this.itemType = null;
     }
 
     removePowerup(type: string) {
         // unset invincibility or ammo or whatever
         this.togglePowerups(type, false);
+
+        this.powerup = null;
     }
 
     togglePowerups(type: string, toggle: boolean) {
         switch (type) {
             case "star":
-                this.invincible = toggle;
+                this.powerupBuffs.invincible = toggle;
                 break;
             case "invis":
-                this.invisible = toggle;
+                this.powerupBuffs.invisible = toggle;
                 break;
             case "fire":
-                this.fire = toggle;
+                this.powerupBuffs.fire = toggle;
                 break;
             case "ms":
-                this.ms = toggle;
+                this.powerupBuffs.ms = toggle;
 
-                if (this.ms) {
+                if (this.powerupBuffs.ms) {
                     this.moveSpeed *= 2;
                 }
                 else {
@@ -93,7 +173,7 @@ class Player extends GameObject {
     }
 
     isInvisible(): boolean {
-        return this.invisible;
+        return this.powerupBuffs.invisible;
     }
 };
 

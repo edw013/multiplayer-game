@@ -16,6 +16,8 @@ var keyHandler = function (e) {
         client.movement.up = (e.type == "keydown");
     } else if (e.key == 's') {
         client.movement.down = (e.type == "keydown");
+    } else if (e.key == "Enter") {
+        client.useItem();
     }
 };
 
@@ -26,7 +28,7 @@ var socket = io.connect();
 
 var client = null;
 socket.on("connect", () => {
-    client = new Client(socket, element("client_canvas"));
+    client = new Client(socket, element("client_canvas"), element("powerup"));
 });
 
 socket.on("curPlayers", function(data) {
@@ -58,9 +60,9 @@ socket.on("removeTile", function(id) {
     client.removeTile(id);
 });
 
-socket.on("addPowerup", function(message) {
-    client.addPowerup(message);
-})
+socket.on("death", function(id) {
+    client.addServerDeath(id);
+});
 
 socket.on("gameState", function(data) {
     for (let i = 0; i < data.length; i++) {
