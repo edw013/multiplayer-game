@@ -16,11 +16,14 @@ class Client {
     private serverMessages: any[];
     private serverDeaths: any[];
     private canvas;
+    private item;
     private powerup;
+    private weapon;
+    private ammo;
     private debuff;
     private deathMessage;
     
-    constructor(socket, canvas, powerup, debuff, deathMessage) {
+    constructor(socket, canvas, item, powerup, weapon, ammo, debuff, deathMessage) {
         this.socket = socket;
         
         this.playerId = this.socket.id;
@@ -47,7 +50,10 @@ class Client {
         this.serverDeaths = [];
 
         this.canvas = canvas;
+        this.item = item;
         this.powerup = powerup;
+        this.weapon = weapon;
+        this.ammo = ammo;
         this.debuff = debuff;
         this.deathMessage = deathMessage;
     }
@@ -183,9 +189,15 @@ class Client {
         this.player.setX(message.x);
         this.player.setY(message.y);
 
-        this.player.setPowerups(message.powerups);
-        this.powerup.innerHTML = message.item;
+        this.item.innerHTML = message.item;
 
+        this.player.setPowerups(message.powerups);
+        this.setPowerupMessage();
+
+        this.player.setWeapon(message.weapon);
+        this.player.setAmmo(message.ammo);
+        this.setWeaponMessage();
+        
         this.player.setDebuffs(message.debuffs);
         this.setDebuffMessage();
 
@@ -206,12 +218,43 @@ class Client {
         player.setX(message.x);
         player.setY(message.y);
 
+        player.setWeapon(message.weapon);
+        player.setAmmo(message.ammo);
         player.setPowerups(message.powerups);
         player.setDebuffs(message.debuffs);
     }
 
     useItem() {
         this.socket.emit("useItem", this.playerId);
+    }
+
+    setWeaponMessage() {
+        let weapon = this.player.getWeapon();
+
+        if (weapon == "gun") {
+            this.weapon.innerHTML = "Gun";
+        } else if (weapon == "bomb") {
+            this.weapon.innerHTML = "Grenade Launcher";
+        }
+
+        this.ammo.innerHTML = this.player.getAmmo();
+    }
+
+    setPowerupMessage() {
+        let powerups = this.player.getPowerups();
+
+        if (powerups.invincible) {
+            this.powerup.innerHTML = "Invincible!";
+        }
+        else if (powerups.invisible) {
+            this.powerup.innerHTML = "Invisible!";
+        }
+        else if (powerups.ms) {
+            this.powerup.innerHTML = "Speed!";
+        }
+        else {
+            this.powerup.innerHTML = "none";
+        }
     }
 
     setDebuffMessage() {

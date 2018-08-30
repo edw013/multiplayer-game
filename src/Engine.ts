@@ -279,7 +279,7 @@ class Engine {
                 }
             }
 
-            this.updateMessages.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY()});
+            this.updateMessages.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY()});
         }
 
         this.sendPendingDeaths();

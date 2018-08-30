@@ -9,6 +9,7 @@ class Player extends GameObject {
     private item: string;
     private itemType: string;
     private weapon: string;
+    private ammo: number;
     private powerup: string;
     private powerupBuffs: any;
     private buffTimer: any;
@@ -30,6 +31,8 @@ class Player extends GameObject {
         this.lastTS = Date.now();
 
         this.item = "none";
+
+        this.ammo = 0;
 
         this.powerupBuffs = {};
         this.powerupBuffs.invincible = false;
@@ -109,6 +112,9 @@ class Player extends GameObject {
             this.die("you fell to your death");
         }
         else if (type == "trap") {
+            if (this.powerupBuffs.ms) {
+                this.removePowerup();
+            }
             this.moveSpeed = 0;
             this.debuffs.trapped = true;
 
@@ -121,8 +127,10 @@ class Player extends GameObject {
         }
         else if (type == "fire") {
             if (this.powerup) {
-                this.removePowerup(this.powerup);
+                this.removePowerup();
             }
+
+            this.item = "none";
 
             this.debuffs.fire = true;
 
@@ -134,7 +142,13 @@ class Player extends GameObject {
         }
         else {
             this.item = type;
-            this.itemType = "powerup";
+
+            if (type == "invis" || type == "star" || type == "ms") {
+                this.itemType = "powerup";
+            }
+            else {
+                this.itemType = "weapon";
+            }
         }
     }
 
@@ -143,7 +157,7 @@ class Player extends GameObject {
     }
 
     useItem(): string {
-        if (!this.item) {
+        if (this.item == "none") {
             return;
         }
 
@@ -151,8 +165,7 @@ class Player extends GameObject {
             this.applyPowerup();
         }
         else {
-            // apply weapon
-            return;
+            this.applyWeapon();
         }
     }
 
@@ -179,7 +192,7 @@ class Player extends GameObject {
     applyPowerup() {
         // one buff at a time
         if (this.powerup) {
-            this.removePowerup(this.powerup);
+            this.removePowerup();
         }
 
         // change invincibility or ammo or whatever
@@ -192,18 +205,55 @@ class Player extends GameObject {
         // start timer
         this.buffTimer = setTimeout((function(self) {
             return function() {
-                self.removePowerup(self.powerup);
+                self.removePowerup();
             };
         })(this), 1000 * 15);
     }
 
-    removePowerup(type: string) {
+    removePowerup() {
         // unset invincibility or ammo or whatever
-        this.togglePowerups(type, false);
+        this.togglePowerups(this.powerup, false);
 
         this.powerup = null;
 
         clearTimeout(this.buffTimer);
+    }
+
+    applyWeapon() {
+        if (this.weapon) {
+            this.removeWeapon();
+        }
+
+        this.weapon = this.item;
+        this.item = "none";
+        this.itemType = null;
+
+        if (this.weapon == "gun") {
+            this.ammo = 2;
+        }
+        else if (this.weapon == "bomb") {
+            this.ammo = 1;
+        }
+    }
+
+    removeWeapon() {
+        this.weapon = null;
+    }
+
+    getWeapon(): string {
+        return this.weapon;
+    }
+
+    setWeapon(weapon: string) {
+        this.weapon = weapon;
+    }
+
+    getAmmo(): number {
+        return this.ammo;
+    }
+
+    setAmmo(ammo: number) {
+        this.ammo = ammo;
     }
 
     togglePowerups(type: string, toggle: boolean) {
@@ -218,10 +268,10 @@ class Player extends GameObject {
                 this.powerupBuffs.ms = toggle;
 
                 if (this.powerupBuffs.ms) {
-                    this.moveSpeed *= 2;
+                    this.moveSpeed = 400;
                 }
                 else {
-                    this.moveSpeed /= 2;
+                    this.moveSpeed = 200;
                 }
 
                 break;

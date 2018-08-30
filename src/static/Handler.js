@@ -28,7 +28,7 @@ var socket = io.connect();
 
 var client = null;
 socket.on("connect", () => {
-    client = new Client(socket, element("client_canvas"), element("powerup"), element("debuff"), element("death"));
+    client = new Client(socket, element("client_canvas"), element("item"), element("powerup"), element("weapon"), element("ammo"), element("debuff"), element("death"));
 });
 
 socket.on("curPlayers", function(data) {
