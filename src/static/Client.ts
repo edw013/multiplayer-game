@@ -1,5 +1,7 @@
 import Player from "../common/Player";
 import Tile from "../common/Tile";
+import Bullet from "../common/Bullet";
+import Bomb from "../common/Bomb";
 
 const TICKRATE: number = 60;
 
@@ -7,14 +9,18 @@ class Client {
     private players: {};
     private player: Player;
     private playerId: string;
+    private removePlayers: any[];
     private tiles: {};
+    private projectiles: {};
     private updateInterval;
     private socket;
     private lastTS;
     private movement: {};
     private savedMoves: any[];
-    private serverMessages: any[];
-    private serverDeaths: any[];
+    private serverPlayerMessages: any[];
+    private serverPlayerDeaths: any[];
+    private serverProjectileMessages: any[];
+    private serverProjectileDeaths: string[];
     private canvas;
     private item;
     private powerup;
@@ -31,8 +37,12 @@ class Client {
 
         this.players = {};
         this.players[this.playerId] = this.player;
+
+        this.removePlayers = [];
     
         this.tiles = {};
+
+        this.projectiles = {};
 
         this.setUpdateInterval();
 
@@ -46,8 +56,10 @@ class Client {
 
         this.savedMoves = [];
 
-        this.serverMessages = [];
-        this.serverDeaths = [];
+        this.serverPlayerMessages = [];
+        this.serverPlayerDeaths = [];
+        this.serverProjectileMessages = [];
+        this.serverProjectileDeaths = [];
 
         this.canvas = canvas;
         this.item = item;
@@ -63,27 +75,15 @@ class Client {
 
         this.updateInterval = setInterval((function(self) {
             return function () {
-                self.updatePositions();
+                self.updatePlayerPositions();
                 self.processServerPositions();
                 self.repaint();
             };
         })(this), 1000.0 / TICKRATE);
     }
 
-    addPlayer(data) {
-        if (data.id == this.playerId) {
-            return;
-        }
-
-        let player: Player = new Player(data.id);
-        player.setX(data.x);
-        player.setY(data.y);
-
-        this.players[data.id] = player;
-    }
-
     removePlayer(id: string) {
-        delete this.players[id];
+        this.removePlayers.push(id);
     }
 
     setPlayers(players) {
@@ -127,11 +127,23 @@ class Client {
         }
     }
 
-    addServerDeath(data) {
-        this.serverDeaths.push(data);
+    addServerPlayerDeath(data) {
+        this.serverPlayerDeaths.push(data);
     }
 
-    updatePositions() {
+    addServerPlayerPosition(data) {
+        this.serverPlayerMessages.push(data);
+    }
+
+    addServerProjectileDeath(data) {
+        this.serverProjectileDeaths.push(data);
+    }
+    
+    addServerProjectilePosition(data) {
+        this.serverProjectileMessages.push(data);
+    }
+
+    updatePlayerPositions() {
         let now = Date.now();
         let lastTS = this.lastTS;
         let pressTime = (now - lastTS) / 1000.0;
@@ -157,8 +169,8 @@ class Client {
     }
 
     processServerPositions() {
-        while (this.serverDeaths.length > 0) {
-            let data = this.serverDeaths.shift();
+        while (this.serverPlayerDeaths.length > 0) {
+            let data = this.serverPlayerDeaths.shift();
             let pid = data.id;
             let player: Player = this.players[pid];
 
@@ -169,8 +181,8 @@ class Client {
             }
         }
 
-        while(this.serverMessages.length > 0) {
-            let message = this.serverMessages.shift();
+        while (this.serverPlayerMessages.length > 0) {
+            let message = this.serverPlayerMessages.shift();
 
             let pid = message.id;
 
@@ -181,6 +193,36 @@ class Client {
                 this.updateOtherPosition(message);
             }
             
+        }
+
+        while (this.serverProjectileMessages.length > 0) {
+            let data = this.serverProjectileMessages.shift();
+            let id = data.id;
+            let type = data.type;
+
+            if (!this.projectiles[id]) {
+                if (type == "bullet") {
+                    this.projectiles[id] = new Bullet(id, data.x, data.y, null, null);
+                }
+                else if (type == "bomb") {
+                    this.projectiles[id] = new Bomb(id, data.x, data.y);
+                }
+            }
+
+            this.projectiles[id].setX(data.x);
+            this.projectiles[id].setY(data.y);
+        }
+        while (this.serverProjectileDeaths.length > 0) {
+            let id = this.serverProjectileDeaths.shift();
+
+            delete this.projectiles[id];
+        }
+
+        // clean
+        while (this.removePlayers.length > 0) {
+            let id = this.removePlayers.shift();
+
+            delete this.players[id];
         }
     }
 
@@ -211,6 +253,7 @@ class Client {
     updateOtherPosition(message) {
         if (!this.players[message.id]) {
             this.players[message.id] = new Player(message.id);
+            console.log("new player");
         }
 
         let player: Player = this.players[message.id];
@@ -226,6 +269,14 @@ class Client {
 
     useItem() {
         this.socket.emit("useItem", this.playerId);
+    }
+
+    shot(x: number, y: number) {
+        if (!this.player.isAlive()) {
+            return;
+        }
+        
+        this.socket.emit("shoot", {id: this.playerId, x: x, y: y});
     }
 
     setWeaponMessage() {
@@ -272,9 +323,9 @@ class Client {
     }
 
     repaint() {
-        this.canvas.width = this.canvas.width;
-
         let ctx = this.canvas.getContext("2d");
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
         for (let key in this.players) {
             let player: Player = this.players[key];
 
@@ -338,6 +389,24 @@ class Client {
             ctx.strokeStyle = tile.getOutlineColor();
             ctx.lineWidth = 5;
             
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        for (let key in this.projectiles) {
+            let projectile = this.projectiles[key];
+
+            let x = projectile.getX();
+            let y = projectile.getY();
+            let radius = projectile.getWidth() / 2;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2*Math.PI, false);
+            ctx.fillStyle = projectile.getColor();
+            ctx.strokeStyle = projectile.getOutlineColor();
+            ctx.lineWidth = 3;
+
             ctx.fill();
             ctx.stroke();
             ctx.restore();

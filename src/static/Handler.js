@@ -6,15 +6,15 @@ let element = function (id) {
 };
 
 // When the player presses the arrow keys, set the corresponding flag in the client.
-var keyHandler = function (e) {
+let keyHandler = function (e) {
     e = e || window.event;
-    if (e.key == 'd') {
+    if (e.key == "d") {
         client.movement.right = (e.type == "keydown");
-    } else if (e.key == 'a') {
+    } else if (e.key == "a") {
         client.movement.left = (e.type == "keydown");
-    } else if (e.key == 'w') {
+    } else if (e.key == "w") {
         client.movement.up = (e.type == "keydown");
-    } else if (e.key == 's') {
+    } else if (e.key == "s") {
         client.movement.down = (e.type == "keydown");
     } else if (e.key == "Enter") {
         client.useItem();
@@ -23,6 +23,16 @@ var keyHandler = function (e) {
 
 document.body.onkeydown = keyHandler;
 document.body.onkeyup = keyHandler;
+
+var canvas = element("client_canvas");
+let mouseHandler = function (e) {
+    let rect = canvas.getBoundingClientRect();
+    let x = e.clientX - rect.left;
+    let y = e.clientY - rect.top;
+    client.shot(x, y);
+}
+
+document.body.onmousedown = mouseHandler;
 
 var socket = io.connect();
 
@@ -44,9 +54,9 @@ socket.on("canvasSize", function(dimensions) {
     element("client_canvas").height = dimensions.height;
 });
 
-socket.on("newPlayer", function(data) {
+/* socket.on("newPlayer", function(data) {
     client.addPlayer(data);
-});
+});*/
 
 socket.on("removePlayer", function(id) {
     client.removePlayer(id);
@@ -62,12 +72,24 @@ socket.on("removeTile", function(id) {
 
 socket.on("death", function(data) {
     for (let i = 0; i < data.length; i++) {
-        client.addServerDeath(data[i]);
+        client.addServerPlayerDeath(data[i]);
     }
 });
 
-socket.on("gameState", function(data) {
+socket.on("projectileDeath", function(data) {
     for (let i = 0; i < data.length; i++) {
-        client.serverMessages.push(data[i]);
+        client.addServerProjectileDeath(data[i]);
+    }
+});
+
+socket.on("playerState", function(data) {
+    for (let i = 0; i < data.length; i++) {
+        client.addServerPlayerPosition(data[i]);
+    }
+});
+
+socket.on("projectileState", function(data) {
+    for (let i = 0; i < data.length; i++) {
+        client.addServerProjectilePosition(data[i]);
     }
 });

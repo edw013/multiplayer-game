@@ -46,7 +46,6 @@ io.on("connection", function(socket: any){
   let dimensions: any = engine.getDimensions();
   io.to(socket.id).emit("canvasSize", dimensions);
 
-  
   // movement inputs from players
   socket.on("move", function(input: any) {
       engine.addMove(input);
@@ -55,6 +54,10 @@ io.on("connection", function(socket: any){
   socket.on("useItem", function(id: string) {
     engine.itemUse(id);
   });
+
+  socket.on("shoot", function(data: any) {
+    engine.registerShot(data);
+  })
 
   socket.on("disconnect", function(){
     engine.removePlayer(socket.id);

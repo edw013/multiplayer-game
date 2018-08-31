@@ -1,6 +1,8 @@
 import * as socketIo from "socket.io";
 import Player from "./common/Player";
 import Tile from "./common/Tile";
+import Bullet from "./common/Bullet";
+import Bomb from "./common/Bomb";
 import QuadTree from "./QuadTree";
 
 const TICKRATE: number = 60;
@@ -10,32 +12,42 @@ class Engine {
     height: number;
     players: any;
     tiles: any;
+    projectiles: any;
     pendingMoves: any;
     updateInterval: any;
-    updateMessages: any[];
+    updatePlayers: any[];
+    updateProjectiles: any[];
     socket: socketIo.Server;
     updateRate: number;
     tree: QuadTree;
     tileCounter: number;
+    projectileCounter: number;
     itemQueue: string[];
-    pendingDeaths: any[];
+    shotQueue: any[];
+    playerDeaths: any[];
+    projectileDeaths: any[];
 
     constructor(socket: socketIo.Server) {
         this.width = 500;
         this.height = 500;
         this.players = {};
         this.tiles = {};
+        this.projectiles = {};
         this.pendingMoves = {};
-        this.updateMessages = [];
+        this.updatePlayers = [];
+        this.updateProjectiles = [];
         this.socket = socket;
         this.updateRate = TICKRATE;
 
         this.tree = new QuadTree({x: 0, y: 0, width: this.width, height: this.height}, 4, 10);
 
         this.tileCounter = 0;
+        this.projectileCounter = 0;
 
         this.itemQueue = [];
-        this.pendingDeaths = [];
+        this.shotQueue = [];
+        this.playerDeaths = [];
+        this.projectileDeaths = [];
 
         this.setUpdateInterval();
     }
@@ -61,9 +73,6 @@ class Engine {
         this.tree.insert(player);
 
         this.pendingMoves[id] = [];
-
-        let message = {id: id, x: 100, y: 100};
-        this.socket.emit("newPlayer", message);
     }
 
     // remove an existing player
@@ -128,8 +137,10 @@ class Engine {
             return function() {
                 self.processItemUses();
                 self.processChanges();
+                self.processShots();
                 self.calculateCollisions();
-                self.sendGameState();
+                self.sendPlayerState();
+                self.sendProjectileState();
             };
         })(this), 1000 / this.updateRate); // 60 times / sec
     }
@@ -164,6 +175,20 @@ class Engine {
         for (let key in this.tiles) {
             this.tree.insert(this.tiles[key]);
         }
+
+        for (let key in this.projectiles) {
+            let bullet = this.projectiles[key];
+
+            bullet.updatePosition(1 / 60);
+
+            if (bullet.getX() < 0 || bullet.getX() > this.width || bullet.getY() < 0 || bullet.getY() > this.height) {
+                bullet.destroy();
+
+                continue;
+            }
+
+            this.tree.insert(bullet);
+        }
     }
 
     calculateCollisions() {
@@ -190,6 +215,13 @@ class Engine {
 
                     if (dist <= player.getWidth() / 2 + targetWidth / 2) {
                         this.playerCollision(player.getId(), obj.getId());
+                    }
+                }
+                if (obj.getObjType() == "bullet" || obj.getObjType() == "bomb") {
+                    let dist = Math.sqrt(Math.pow(player.getX() - targetX, 2) + Math.pow(player.getY() - targetY, 2));
+
+                    if (dist <= player.getWidth() / 2 + targetWidth / 2) {
+                        this.projectileCollision(player.getId(), obj.getId());
                     }
                 }
                 // tile object is collision between a circle and a rectangle
@@ -243,6 +275,17 @@ class Engine {
         }
     }
 
+    projectileCollision(pid: string, bid: string) {
+        let player: Player = this.players[pid];
+        let projectile = this.projectiles[bid];
+
+        if (!player.isInvincible()) {
+            player.die("you were hit by a " + projectile.getObjType());
+        }
+
+        projectile.destroy();
+    }
+
     tileCollision(pid: string, tid: string) {
         let player: Player = this.players[pid];
         let tile: Tile = this.tiles[tid]
@@ -259,18 +302,18 @@ class Engine {
         this.removeTile(tid);
     }
 
-    sendPendingDeaths() {
-        this.socket.emit("death", this.pendingDeaths);
-        this.pendingDeaths = [];
+    sendPlayerDeaths() {
+        this.socket.emit("death", this.playerDeaths);
+        this.playerDeaths = [];
     }
 
-    sendGameState() {
+    sendPlayerState() {
         for (let pid in this.players) {
             let player = this.players[pid];
 
             if (!player.isAlive()) {
                 if (player.isRecentDead()) {
-                    this.pendingDeaths.push({id: pid, reason: player.getDeathReason()});
+                    this.playerDeaths.push({id: pid, reason: player.getDeathReason()});
 
                     player.resetRecentDead();
                 }
@@ -279,14 +322,40 @@ class Engine {
                 }
             }
 
-            this.updateMessages.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY()});
+            this.updatePlayers.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY()});
         }
 
-        this.sendPendingDeaths();
+        this.sendPlayerDeaths();
 
         // send new server state
-        this.socket.emit("gameState", this.updateMessages);
-        this.updateMessages = [];
+        this.socket.emit("playerState", this.updatePlayers);
+        this.updatePlayers = [];
+    }
+
+    sendProjectileDeaths() {
+        this.socket.emit("projectileDeath", this.projectileDeaths);
+        this.projectileDeaths = [];
+    }
+
+    sendProjectileState() {
+        for (let id in this.projectiles) {
+            let projectile = this.projectiles[id];
+
+            if (projectile.isDestroyed()) {
+                this.projectileDeaths.push(id);
+
+                delete this.projectiles[id];
+
+                continue;
+            }
+
+            this.updateProjectiles.push({id: id, x: projectile.getX(), y: projectile.getY(), type: projectile.getObjType()});
+        }
+
+        this.sendProjectileDeaths();
+
+        this.socket.emit("projectileState", this.updateProjectiles);
+        this.updateProjectiles = [];
     }
 
     addItem(id: string, type: string) {
@@ -302,10 +371,83 @@ class Engine {
     processItemUses() {
         while (this.itemQueue.length > 0) {
             let id = this.itemQueue.shift();
-            let player = this.players[id];
+            let player: Player = this.players[id];
 
             player.useItem();
         }
+    }
+
+    registerShot(data: any) {
+        this.shotQueue.push(data);
+    }
+
+    processShots() {
+        while (this.shotQueue.length > 0) {
+            let data = this.shotQueue.shift();
+            let id = data.id;
+            let targetX = data.x;
+            let targetY = data.y;
+
+            let player: Player = this.players[id];
+
+            if (player.getAmmo() == 0) {
+                continue;
+            }
+
+            if (!player.isAlive()) {
+                continue;
+            }
+
+            let weaponType = player.getWeapon();
+            if (!weaponType) {
+                continue;
+            }
+
+            if (weaponType == "gun") {
+                this.createBullet(id, targetX, targetY);
+            }
+            else if (weaponType == "bomb") {
+                this.createBomb(id, targetX, targetY);
+            }
+        }
+    }
+
+    createBullet(pid, targetX, targetY) {
+        let player: Player = this.players[pid];
+
+        if (player.getAmmo() < 1) {
+            return;
+        }
+
+        let initX = player.getX();
+        let initY = player.getY();
+
+        let deltaX = targetX - initX;
+        let deltaY = targetY - initY;
+
+        let id = this.projectileCounter.toString();
+        this.projectileCounter++;
+        let bullet = new Bullet(id, initX, initY, deltaX, deltaY);
+
+        this.projectiles[id] = bullet;
+
+        player.setAmmo(player.getAmmo() - 1);
+    }
+
+    createBomb(pid, targetX, targetY) {
+        let player: Player = this.players[pid];
+
+        if (player.getAmmo() < 1) {
+            return;
+        }
+
+        let id = this.projectileCounter.toString();
+        this.projectileCounter++;
+        let bomb = new Bomb(id, targetX, targetY);
+
+        this.projectiles[id] = bomb;
+
+        player.setAmmo(player.getAmmo() - 1);
     }
 }
 

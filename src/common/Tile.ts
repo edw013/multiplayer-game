@@ -1,7 +1,8 @@
 import GameObject from "./GameObject";
 
 const LUCK: number = 0.7;
-const GOOD: string[] = ["star", "ms", "invis", "gun", "bomb"];
+// "star", "ms", "invis", "bomb", 
+const GOOD: string[] = ["star", "ms", "invis", "gun"];
 const BAD: string[] = ["fall", "trap", "fire"];
 
 class Tile extends GameObject {
