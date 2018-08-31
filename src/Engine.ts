@@ -151,6 +151,10 @@ class Engine {
         for (let pid in this.players) {
             let player: Player = this.players[pid];
 
+            if (!player) {
+                continue;
+            }
+
             if (!player.isAlive()) {
                 continue;
             }
@@ -194,6 +198,10 @@ class Engine {
     calculateCollisions() {
         for (let pid in this.players) {
             let player: Player = this.players[pid];
+
+            if (!player) {
+                continue;
+            }
 
             let possibleCollisions = this.tree.get(player);
 
@@ -246,6 +254,10 @@ class Engine {
         let player1: Player = this.players[p1];
         let player2: Player = this.players[p2];
 
+        if (!player1 || !player2) {
+            return;
+        }
+
         if (player1.isInvincible()) {
             if (!player2.isInvincible()) {
                 player2.die("you touched an invincible player");
@@ -277,6 +289,11 @@ class Engine {
 
     projectileCollision(pid: string, bid: string) {
         let player: Player = this.players[pid];
+
+        if (!player) {
+            return;
+        }
+
         let projectile = this.projectiles[bid];
 
         if (!player.isInvincible()) {
@@ -289,6 +306,11 @@ class Engine {
     tileCollision(pid: string, tid: string) {
         let player: Player = this.players[pid];
         let tile: Tile = this.tiles[tid]
+
+        // multiple collisions and the tile is already destroyed?
+        if (!player || !tile) {
+            return;
+        }
 
         // can't pick up powerups when on fire
         if (player.isFire()) {
@@ -361,6 +383,10 @@ class Engine {
     addItem(id: string, type: string) {
         let player = this.players[id];
 
+        if (!player) {
+            return;
+        }
+
         player.addItem(type);
     }
 
@@ -372,6 +398,10 @@ class Engine {
         while (this.itemQueue.length > 0) {
             let id = this.itemQueue.shift();
             let player: Player = this.players[id];
+
+            if (!player) {
+                continue;
+            }
 
             player.useItem();
         }
@@ -389,6 +419,10 @@ class Engine {
             let targetY = data.y;
 
             let player: Player = this.players[id];
+
+            if (!player) {
+                continue;
+            }
 
             if (player.getAmmo() == 0) {
                 continue;
@@ -415,6 +449,10 @@ class Engine {
     createBullet(pid, targetX, targetY) {
         let player: Player = this.players[pid];
 
+        if (!player) {
+            return;
+        }
+
         if (player.getAmmo() < 1) {
             return;
         }
@@ -436,6 +474,10 @@ class Engine {
 
     createBomb(pid, targetX, targetY) {
         let player: Player = this.players[pid];
+
+        if (!player) {
+            return;
+        }
 
         if (player.getAmmo() < 1) {
             return;

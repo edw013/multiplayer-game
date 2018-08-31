@@ -275,7 +275,8 @@ class Client {
         if (!this.player.isAlive()) {
             return;
         }
-        
+
+        console.log("emitting");
         this.socket.emit("shoot", {id: this.playerId, x: x, y: y});
     }
 

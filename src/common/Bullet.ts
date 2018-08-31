@@ -17,16 +17,11 @@ class Bullet extends GameObject {
 
         let ms = 400;
 
+        let xDir = (deltaX < 0) ? -1 : 1;
+        let yDir = (deltaY < 0) ? -1 : 1;
         let theta = Math.atan(Math.abs(deltaY / deltaX));
-        this.xSpeed = ms * Math.cos(theta);
-        this.ySpeed = ms * Math.sin(theta);
-        
-        if (deltaX < 0) {
-            this.xSpeed = -this.xSpeed;
-        }
-        if (deltaY < 0) {
-            this.ySpeed = - this.ySpeed;
-        }
+        this.xSpeed = xDir * ms * Math.cos(theta);
+        this.ySpeed = yDir * ms * Math.sin(theta);
 
         // starting point has to be outside player because i'm lazy
         let hypotenuse = Math.sqrt(Math.pow(deltaX, 2) + Math.pow(deltaY, 2));
