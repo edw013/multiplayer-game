@@ -8,11 +8,11 @@ class GameObject {
     protected outlineColor: string;
     protected objType: string;
 
-    constructor(id: string) {
+    protected constructor(id: string) {
         this.id = id;
     }
 
-    getRandomColor(): string {
+    protected getRandomColor(): string {
         var letters = '0123456789ABCDEF';
         var color = '#';
         for (var i = 0; i < 6; i++) {
@@ -21,50 +21,51 @@ class GameObject {
         return color;
     }
 
-    getId(): string {
+    public getId(): string {
         return this.id;
     }
-    getX(): number {
+
+    public getX(): number {
         return this.xPos;
     }
 
-    setX(x: number) {
+    public setX(x: number) {
         this.xPos = x;
     }
 
-    getY(): number {
+    public getY(): number {
         return this.yPos;
     }
 
-    setY(y: number) {
+    public setY(y: number) {
         this.yPos = y;
     }
 
-    getWidth(): number {
+    public getWidth(): number {
         return this.width;
     }
 
-    setWidth(width: number) {
+    public setWidth(width: number) {
         this.width = width;
     }
 
-    getHeight(): number {
+    public getHeight(): number {
         return this.height;
     }
 
-    setHeight(height: number) {
+    public setHeight(height: number) {
         this.height = height;
     }
 
-    getColor(): string {
+    public getColor(): string {
         return this.color;
     }
 
-    getOutlineColor(): string {
+    public getOutlineColor(): string {
         return this.outlineColor;
     }
 
-    getObjType(): string {
+    public getObjType(): string {
         return this.objType;
     }
 }
