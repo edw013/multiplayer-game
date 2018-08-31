@@ -181,17 +181,29 @@ class Engine {
         }
 
         for (let key in this.projectiles) {
-            let bullet = this.projectiles[key];
+            let projectile = this.projectiles[key];
+            let type = projectile.getObjType();
 
-            bullet.updatePosition(1 / 60);
+            if (type == "bullet") {
+                let bullet = <Bullet> projectile;
 
-            if (bullet.getX() < 0 || bullet.getX() > this.width || bullet.getY() < 0 || bullet.getY() > this.height) {
-                bullet.destroy();
+                bullet.updatePosition(1 / 60);
 
-                continue;
+                if (bullet.getX() < 0 || bullet.getX() > this.width || bullet.getY() < 0 || bullet.getY() > this.height) {
+                    bullet.destroy();
+
+                    continue;
+                }
+
+                this.tree.insert(bullet);
             }
+            else if (type == "bomb") {
+                let bomb = <Bomb> projectile;
 
-            this.tree.insert(bullet);
+                if (bomb.isExploded()) {
+                    this.tree.insert(bomb);
+                }
+            }
         }
     }
 
@@ -213,8 +225,10 @@ class Engine {
                 let targetWidth = obj.getWidth();
                 let targetHeight = obj.getHeight();
 
+                let type = obj.getObjType();
+
                 // player object is collision between 2 circles
-                if (obj.getObjType() == "player") {
+                if (type == "player") {
                     if (obj.getId() == pid) {
                         continue;
                     }
@@ -225,15 +239,20 @@ class Engine {
                         this.playerCollision(player.getId(), obj.getId());
                     }
                 }
-                if (obj.getObjType() == "bullet" || obj.getObjType() == "bomb") {
+                if (type == "bullet" || type == "bomb") {
                     let dist = Math.sqrt(Math.pow(player.getX() - targetX, 2) + Math.pow(player.getY() - targetY, 2));
 
                     if (dist <= player.getWidth() / 2 + targetWidth / 2) {
-                        this.projectileCollision(player.getId(), obj.getId());
+                        if (type == "bullet") {
+                            this.bulletCollision(player.getId(), obj.getId());
+                        }
+                        else if (type == "bomb") {
+                            this.bombCollision(player.getId(), obj.getId());
+                        }
                     }
                 }
                 // tile object is collision between a circle and a rectangle
-                else if (obj.getObjType() == "tile") {
+                else if (type == "tile") {
                     let tile: Tile = <Tile> obj;
 
                     // x and y are always in the center
@@ -287,20 +306,34 @@ class Engine {
         }
     }
 
-    projectileCollision(pid: string, bid: string) {
+    bulletCollision(pid: string, bid: string) {
         let player: Player = this.players[pid];
 
         if (!player) {
             return;
         }
 
-        let projectile = this.projectiles[bid];
+        let bullet = <Bullet> this.projectiles[bid];
 
         if (!player.isInvincible()) {
-            player.die("you were hit by a " + projectile.getObjType());
+            player.die("you were hit by a bullet");
         }
 
-        projectile.destroy();
+        bullet.destroy();
+    }
+
+    bombCollision(pid: string, bid: string) {
+        let player: Player = this.players[pid];
+
+        if (!player) {
+            return;
+        }
+
+        let bomb = <Bomb> this.projectiles[bid];
+
+        if (!player.isInvincible()) {
+            player.die("you were blown up");
+        }
     }
 
     tileCollision(pid: string, tid: string) {
@@ -371,7 +404,12 @@ class Engine {
                 continue;
             }
 
-            this.updateProjectiles.push({id: id, x: projectile.getX(), y: projectile.getY(), type: projectile.getObjType()});
+            let bombExploded = false;
+            if (projectile.getObjType() == "bomb") {
+                bombExploded = (<Bomb> projectile).isExploded();
+            }
+
+            this.updateProjectiles.push({id: id, x: projectile.getX(), y: projectile.getY(), exploded: bombExploded, type: projectile.getObjType()});
         }
 
         this.sendProjectileDeaths();
@@ -488,6 +526,7 @@ class Engine {
         let bomb = new Bomb(id, targetX, targetY);
 
         this.projectiles[id] = bomb;
+        bomb.start();
 
         player.setAmmo(player.getAmmo() - 1);
     }

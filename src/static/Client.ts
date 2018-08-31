@@ -211,6 +211,10 @@ class Client {
 
             this.projectiles[id].setX(data.x);
             this.projectiles[id].setY(data.y);
+
+            if (type == "bomb" && data.exploded) {
+                <Bomb> this.projectiles[id].explode();
+            }
         }
         while (this.serverProjectileDeaths.length > 0) {
             let id = this.serverProjectileDeaths.shift();
@@ -253,7 +257,6 @@ class Client {
     updateOtherPosition(message) {
         if (!this.players[message.id]) {
             this.players[message.id] = new Player(message.id);
-            console.log("new player");
         }
 
         let player: Player = this.players[message.id];
@@ -276,7 +279,6 @@ class Client {
             return;
         }
 
-        console.log("emitting");
         this.socket.emit("shoot", {id: this.playerId, x: x, y: y});
     }
 
