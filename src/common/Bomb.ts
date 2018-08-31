@@ -4,7 +4,7 @@ class Bomb extends GameObject {
     private exploded: boolean;
     private destroyed: boolean;
 
-    constructor(id, targetX, targetY) {
+    public constructor(id, targetX, targetY) {
         super(id);
 
         this.width = 40;
@@ -22,15 +22,15 @@ class Bomb extends GameObject {
         this.destroyed = false;
     }
 
-    destroy() {
+    public destroy() {
         this.destroyed = true;
     }
 
-    isDestroyed(): boolean {
+    public isDestroyed(): boolean {
         return this.destroyed;
     }
 
-    start() {
+    public start() {
         setTimeout((function(self) {
             return function() {
                 self.explode();
@@ -38,7 +38,7 @@ class Bomb extends GameObject {
         })(this), 1000 * 3);
     }
 
-    explode() {
+    public explode() {
         this.color = "red";
         this.width = 120;
         this.height = 120;
@@ -51,7 +51,7 @@ class Bomb extends GameObject {
         })(this), 1000 * 0.5);
     }
 
-    isExploded(): boolean {
+    public isExploded(): boolean {
         return this.exploded;
     }
 }

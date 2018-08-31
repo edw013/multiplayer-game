@@ -5,7 +5,7 @@ class Bullet extends GameObject {
     private xSpeed: number;
     private destroyed: boolean;
 
-    constructor(id: string, initX: number, initY: number, deltaX: number, deltaY: number) {
+    public constructor(id: string, initX: number, initY: number, deltaX: number, deltaY: number) {
         super(id);
 
         this.objType = "bullet";
@@ -33,16 +33,16 @@ class Bullet extends GameObject {
         this.destroyed = false;
     }
 
-    updatePosition(rate: number) {
+    public updatePosition(rate: number) {
         this.xPos += this.xSpeed * rate;
         this.yPos += this.ySpeed * rate;
     }
 
-    destroy() {
+    public destroy() {
         this.destroyed = true;
     }
 
-    isDestroyed(): boolean {
+    public isDestroyed(): boolean {
         return this.destroyed;
     }
 }

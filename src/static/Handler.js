@@ -54,10 +54,6 @@ socket.on("canvasSize", function(dimensions) {
     element("client_canvas").height = dimensions.height;
 });
 
-/* socket.on("newPlayer", function(data) {
-    client.addPlayer(data);
-});*/
-
 socket.on("removePlayer", function(id) {
     client.removePlayer(id);
 });

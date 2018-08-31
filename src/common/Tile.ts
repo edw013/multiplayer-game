@@ -8,7 +8,7 @@ const BAD: string[] = ["fall", "trap", "fire"];
 class Tile extends GameObject {
     private type: string;
 
-    constructor(id: string) {
+    public constructor(id: string) {
         super(id);
 
         this.objType = "tile";
@@ -26,7 +26,7 @@ class Tile extends GameObject {
         }
     }
 
-    getType(): string {
+    public getType(): string {
         return this.type;
     }
 };

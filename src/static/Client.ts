@@ -29,7 +29,7 @@ class Client {
     private debuff;
     private deathMessage;
     
-    constructor(socket, canvas, item, powerup, weapon, ammo, debuff, deathMessage) {
+    public constructor(socket, canvas, item, powerup, weapon, ammo, debuff, deathMessage) {
         this.socket = socket;
         
         this.playerId = this.socket.id;
@@ -70,7 +70,7 @@ class Client {
         this.deathMessage = deathMessage;
     }
 
-    setUpdateInterval() {
+    private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
         this.updateInterval = setInterval((function(self) {
@@ -82,11 +82,11 @@ class Client {
         })(this), 1000.0 / TICKRATE);
     }
 
-    removePlayer(id: string) {
+    public removePlayer(id: string) {
         this.removePlayers.push(id);
     }
 
-    setPlayers(players) {
+    public setPlayers(players) {
         for (let key in players) {
             let player = players[key];
             let pid = player.id;
@@ -104,7 +104,7 @@ class Client {
         }
     }
 
-    addTile(data) {
+    public addTile(data) {
         let tile: Tile = new Tile(data.id);
         tile.setX(data.x);
         tile.setY(data.y);
@@ -112,11 +112,11 @@ class Client {
         this.tiles[data.id] = tile;
     }
 
-    removeTile(id: string) {
+    public removeTile(id: string) {
         delete this.tiles[id];
     }
 
-    setTiles(tiles) {
+    public setTiles(tiles) {
         for (let key in tiles) {
             let tile = tiles[key];
             let id = tile.id;
@@ -127,23 +127,23 @@ class Client {
         }
     }
 
-    addServerPlayerDeath(data) {
+    public addServerPlayerDeath(data) {
         this.serverPlayerDeaths.push(data);
     }
 
-    addServerPlayerPosition(data) {
+    public addServerPlayerPosition(data) {
         this.serverPlayerMessages.push(data);
     }
 
-    addServerProjectileDeath(data) {
+    public addServerProjectileDeath(data) {
         this.serverProjectileDeaths.push(data);
     }
     
-    addServerProjectilePosition(data) {
+    public addServerProjectilePosition(data) {
         this.serverProjectileMessages.push(data);
     }
 
-    updatePlayerPositions() {
+    private updatePlayerPositions() {
         let now = Date.now();
         let lastTS = this.lastTS;
         let pressTime = (now - lastTS) / 1000.0;
@@ -168,7 +168,7 @@ class Client {
         }
     }
 
-    processServerPositions() {
+    private processServerPositions() {
         while (this.serverPlayerDeaths.length > 0) {
             let data = this.serverPlayerDeaths.shift();
             let pid = data.id;
@@ -230,7 +230,7 @@ class Client {
         }
     }
 
-    updateSelfPosition(message) {
+    private updateSelfPosition(message) {
         let serverTS = message.ts;
         this.player.setX(message.x);
         this.player.setY(message.y);
@@ -254,7 +254,7 @@ class Client {
         });
     }
 
-    updateOtherPosition(message) {
+    private updateOtherPosition(message) {
         if (!this.players[message.id]) {
             this.players[message.id] = new Player(message.id);
         }
@@ -270,11 +270,11 @@ class Client {
         player.setDebuffs(message.debuffs);
     }
 
-    useItem() {
+    public useItem() {
         this.socket.emit("useItem", this.playerId);
     }
 
-    shot(x: number, y: number) {
+    public shot(x: number, y: number) {
         if (!this.player.isAlive()) {
             return;
         }
@@ -282,7 +282,7 @@ class Client {
         this.socket.emit("shoot", {id: this.playerId, x: x, y: y});
     }
 
-    setWeaponMessage() {
+    private setWeaponMessage() {
         let weapon = this.player.getWeapon();
 
         if (weapon == "gun") {
@@ -294,7 +294,7 @@ class Client {
         this.ammo.innerHTML = this.player.getAmmo();
     }
 
-    setPowerupMessage() {
+    private setPowerupMessage() {
         let powerups = this.player.getPowerups();
 
         if (powerups.invincible) {
@@ -311,7 +311,7 @@ class Client {
         }
     }
 
-    setDebuffMessage() {
+    private setDebuffMessage() {
         let debuffs = this.player.getDebuffs();
 
         if (debuffs.fire) {
@@ -325,7 +325,7 @@ class Client {
         }
     }
 
-    repaint() {
+    private repaint() {
         let ctx = this.canvas.getContext("2d");
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 

@@ -8,26 +8,26 @@ import QuadTree from "./QuadTree";
 const TICKRATE: number = 60;
 
 class Engine {
-    width: number;
-    height: number;
-    players: any;
-    tiles: any;
-    projectiles: any;
-    pendingMoves: any;
-    updateInterval: any;
-    updatePlayers: any[];
-    updateProjectiles: any[];
-    socket: socketIo.Server;
-    updateRate: number;
-    tree: QuadTree;
-    tileCounter: number;
-    projectileCounter: number;
-    itemQueue: string[];
-    shotQueue: any[];
-    playerDeaths: any[];
-    projectileDeaths: any[];
+    private width: number;
+    private height: number;
+    private players: any;
+    private tiles: any;
+    private projectiles: any;
+    private pendingMoves: any;
+    private updateInterval: any;
+    private updatePlayers: any[];
+    private updateProjectiles: any[];
+    private socket: socketIo.Server;
+    private updateRate: number;
+    private tree: QuadTree;
+    private tileCounter: number;
+    private projectileCounter: number;
+    private itemQueue: string[];
+    private shotQueue: any[];
+    private playerDeaths: any[];
+    private projectileDeaths: any[];
 
-    constructor(socket: socketIo.Server) {
+    public constructor(socket: socketIo.Server) {
         this.width = 500;
         this.height = 500;
         this.players = {};
@@ -52,7 +52,7 @@ class Engine {
         this.setUpdateInterval();
     }
 
-    getDimensions(): any {
+    public getDimensions(): any {
         let dimensions: any = {};
         dimensions.width = this.width;
         dimensions.height = this.height;
@@ -61,7 +61,7 @@ class Engine {
     }
 
     // add a new player
-    addPlayer(id: string) {
+    public addPlayer(id: string) {
         console.log("Engine: added " + id);
         let player = new Player(id);
         this.players[id] = player;
@@ -76,13 +76,13 @@ class Engine {
     }
 
     // remove an existing player
-    removePlayer(id: string) {
+    public removePlayer(id: string) {
         delete this.players[id];
 
         this.socket.emit("removePlayer", id);
     }
 
-    spawnTile() {
+    public spawnTile() {
         let x = Math.floor(Math.random() * (this.width - 100)) + 50;
         let y = Math.floor(Math.random() * (this.height - 100)) + 50;
 
@@ -100,7 +100,7 @@ class Engine {
         this.socket.emit("newTile", {x: x, y: y});
     }
 
-    removeTile(id: string) {
+    private removeTile(id: string) {
         delete this.tiles[id];
 
         this.socket.emit("removeTile", id);
@@ -109,16 +109,16 @@ class Engine {
     }
 
     // return all players
-    getPlayers() {
+    public getPlayers() {
         return this.players;
     }
 
-    getTiles() {
+    public getTiles() {
         return this.tiles;
     }
 
     // add a move to process
-    addMove(input: any) {
+    public addMove(input: any) {
         let id = input.id;
 
         // i don't think this should be possible but heroku complained so
@@ -130,7 +130,7 @@ class Engine {
     }
 
     // set update rate
-    setUpdateInterval() {
+    private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
         this.updateInterval = setInterval((function(self) {
@@ -146,7 +146,7 @@ class Engine {
     }
 
     // process all pending
-    processChanges() {     
+    private processChanges() {     
         this.tree.clear();  
         for (let pid in this.players) {
             let player: Player = this.players[pid];
@@ -207,7 +207,7 @@ class Engine {
         }
     }
 
-    calculateCollisions() {
+    private calculateCollisions() {
         for (let pid in this.players) {
             let player: Player = this.players[pid];
 
@@ -269,7 +269,7 @@ class Engine {
         }
     }
 
-    playerCollision(p1: string, p2: string) {
+    private playerCollision(p1: string, p2: string) {
         let player1: Player = this.players[p1];
         let player2: Player = this.players[p2];
 
@@ -306,7 +306,7 @@ class Engine {
         }
     }
 
-    bulletCollision(pid: string, bid: string) {
+    private bulletCollision(pid: string, bid: string) {
         let player: Player = this.players[pid];
 
         if (!player) {
@@ -322,7 +322,7 @@ class Engine {
         bullet.destroy();
     }
 
-    bombCollision(pid: string, bid: string) {
+    private bombCollision(pid: string, bid: string) {
         let player: Player = this.players[pid];
 
         if (!player) {
@@ -336,7 +336,7 @@ class Engine {
         }
     }
 
-    tileCollision(pid: string, tid: string) {
+    private tileCollision(pid: string, tid: string) {
         let player: Player = this.players[pid];
         let tile: Tile = this.tiles[tid]
 
@@ -357,12 +357,12 @@ class Engine {
         this.removeTile(tid);
     }
 
-    sendPlayerDeaths() {
+    private sendPlayerDeaths() {
         this.socket.emit("death", this.playerDeaths);
         this.playerDeaths = [];
     }
 
-    sendPlayerState() {
+    private sendPlayerState() {
         for (let pid in this.players) {
             let player = this.players[pid];
 
@@ -387,12 +387,12 @@ class Engine {
         this.updatePlayers = [];
     }
 
-    sendProjectileDeaths() {
+    private sendProjectileDeaths() {
         this.socket.emit("projectileDeath", this.projectileDeaths);
         this.projectileDeaths = [];
     }
 
-    sendProjectileState() {
+    private sendProjectileState() {
         for (let id in this.projectiles) {
             let projectile = this.projectiles[id];
 
@@ -418,7 +418,7 @@ class Engine {
         this.updateProjectiles = [];
     }
 
-    addItem(id: string, type: string) {
+    public addItem(id: string, type: string) {
         let player = this.players[id];
 
         if (!player) {
@@ -428,11 +428,11 @@ class Engine {
         player.addItem(type);
     }
 
-    itemUse(id: string) {
+    public itemUse(id: string) {
         this.itemQueue.push(id);
     }
 
-    processItemUses() {
+    private processItemUses() {
         while (this.itemQueue.length > 0) {
             let id = this.itemQueue.shift();
             let player: Player = this.players[id];
@@ -445,11 +445,11 @@ class Engine {
         }
     }
 
-    registerShot(data: any) {
+    public registerShot(data: any) {
         this.shotQueue.push(data);
     }
 
-    processShots() {
+    private processShots() {
         while (this.shotQueue.length > 0) {
             let data = this.shotQueue.shift();
             let id = data.id;
@@ -484,7 +484,7 @@ class Engine {
         }
     }
 
-    createBullet(pid, targetX, targetY) {
+    private createBullet(pid, targetX, targetY) {
         let player: Player = this.players[pid];
 
         if (!player) {
@@ -510,7 +510,7 @@ class Engine {
         player.setAmmo(player.getAmmo() - 1);
     }
 
-    createBomb(pid, targetX, targetY) {
+    private createBomb(pid, targetX, targetY) {
         let player: Player = this.players[pid];
 
         if (!player) {

@@ -4,21 +4,21 @@ import GameObject from "./common/GameObject";
 class QuadTree {
     private root: Node;
 
-    constructor(bounds: {}, maxObjects: number, maxLevels: number) {
+    public constructor(bounds: {}, maxObjects: number, maxLevels: number) {
         let node: Node = new Node(bounds, 0, maxObjects, maxLevels);
 
         this.root = node;
     }
 
-    insert(item: GameObject) {
+    public insert(item: GameObject) {
         this.root.insert(item);
     }
 
-    clear() {
+    public clear() {
         this.root.clear();
     }
 
-    get(item: GameObject): GameObject[] {
+    public get(item: GameObject): GameObject[] {
         return this.root.get(item).slice(0);
     }
 
@@ -32,7 +32,7 @@ class Node {
     private objects: GameObject[];
     private nodes: Node[];
 
-    constructor(bounds: {}, level: number, maxObjects: number, maxLevels: number) {
+    public constructor(bounds: {}, level: number, maxObjects: number, maxLevels: number) {
         this.bounds = bounds;
         this.level = level;
         this.maxObjects = maxObjects;
@@ -41,7 +41,7 @@ class Node {
         this.nodes = [];
     }
 
-    insert(item: GameObject) {
+    public insert(item: GameObject) {
         if (this.nodes.length > 0) {
             let quadrant: number = this.getIndex(item);
 
@@ -73,7 +73,7 @@ class Node {
         }
     }
 
-    clear() {
+    public clear() {
         this.objects.length = 0;
 
         for (let i = 0; i < this.nodes.length; i++) {
@@ -83,7 +83,7 @@ class Node {
         this.nodes.length = 0;
     }
 
-    get(item: GameObject): GameObject[] {
+    public get(item: GameObject): GameObject[] {
         let items: GameObject[] = [];
         let quadrant = this.getIndex(item);
 
@@ -96,7 +96,7 @@ class Node {
         return items;
     }
 
-    split() {
+    private split() {
         let splitWidth: number = this.bounds.width / 2;
         let splitHeight: number = this.bounds.height / 2;
         let x = this.bounds.x;
@@ -130,7 +130,7 @@ class Node {
     }
 
     // find which node the item falls into
-    getIndex(item: GameObject): number {
+    private getIndex(item: GameObject): number {
         let vertMid = this.bounds.x + this.bounds.width / 2;
         let horMid = this.bounds.y + this.bounds.height / 2;
 

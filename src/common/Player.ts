@@ -17,7 +17,7 @@ class Player extends GameObject {
     private debuffTimer: any;
     private deathReason: string;
 
-    constructor(id: string) {
+    public constructor(id: string) {
         super(id);
         this.objType = "player";
         this.numKills = 0;
@@ -44,50 +44,50 @@ class Player extends GameObject {
         this.debuffs.trapped = false;
     }
 
-    isAlive(): boolean {
+    public isAlive(): boolean {
         return this.alive;
     }
 
-    isRecentDead(): boolean {
+    public isRecentDead(): boolean {
         return this.recentDead;
     }
 
-    resetRecentDead() {
+    public resetRecentDead() {
         this.recentDead = false;
     }
 
-    die(reason: string) {
+    public die(reason: string) {
         this.alive = false;
     
         this.recentDead = true;
         this.deathReason = reason;
     }
 
-    getDeathReason() {
+    public getDeathReason() {
         return this.deathReason;
     }
 
-    getLastTS(): any {
+    public getLastTS(): any {
         return this.lastTS;
     }
 
-    setLastTS(ts: any) {
+    public setLastTS(ts: any) {
         this.lastTS = ts;
     }
 
-    incrementKills() {
+    public incrementKills() {
         this.numKills++;
     }
 
-    setNumKills(kills: number) {
+    public setNumKills(kills: number) {
         this.numKills = kills;
     }
     
-    getNumKills(): number {
+    public getNumKills(): number {
         return this.numKills;
     }
 
-    applyInput(input: any) {
+    public applyInput(input: any) {
         if (input.movement.up) {
             this.yPos -= input.pressTime * this.moveSpeed;
         }
@@ -102,11 +102,11 @@ class Player extends GameObject {
         }
     }
 
-    hasItem(): boolean {
+    public hasItem(): boolean {
         return !(this.item == null);
     }
 
-    addItem(type: string) {
+    public addItem(type: string) {
         // bad ones are instant use, others are stored
         if (type == "fall") {
             this.die("you fell to your death");
@@ -152,11 +152,11 @@ class Player extends GameObject {
         }
     }
 
-    getItem(): string {
+    public getItem(): string {
         return this.item;
     }
 
-    useItem(): string {
+    public useItem(): string {
         if (this.item == "none") {
             return;
         }
@@ -169,27 +169,27 @@ class Player extends GameObject {
         }
     }
 
-    getPowerup(): string {
+    public getPowerup(): string {
         return this.powerup;
     }
 
-    getPowerups(): any {
+    public getPowerups(): any {
         return this.powerupBuffs;
     }
 
-    setPowerups(powerups: any) {
+    public setPowerups(powerups: any) {
         this.powerupBuffs = powerups;
     }
 
-    getDebuffs(): any {
+    public getDebuffs(): any {
         return this.debuffs;
     }
 
-    setDebuffs(debuffs: any) {
+    public setDebuffs(debuffs: any) {
         this.debuffs = debuffs;
     }
 
-    applyPowerup() {
+    public applyPowerup() {
         // one buff at a time
         if (this.powerup) {
             this.removePowerup();
@@ -210,7 +210,7 @@ class Player extends GameObject {
         })(this), 1000 * 15);
     }
 
-    removePowerup() {
+    public removePowerup() {
         // unset invincibility or ammo or whatever
         this.togglePowerups(this.powerup, false);
 
@@ -219,7 +219,7 @@ class Player extends GameObject {
         clearTimeout(this.buffTimer);
     }
 
-    applyWeapon() {
+    public applyWeapon() {
         if (this.weapon) {
             this.removeWeapon();
         }
@@ -236,27 +236,27 @@ class Player extends GameObject {
         }
     }
 
-    removeWeapon() {
+    public removeWeapon() {
         this.weapon = null;
     }
 
-    getWeapon(): string {
+    public getWeapon(): string {
         return this.weapon;
     }
 
-    setWeapon(weapon: string) {
+    public setWeapon(weapon: string) {
         this.weapon = weapon;
     }
 
-    getAmmo(): number {
+    public getAmmo(): number {
         return this.ammo;
     }
 
-    setAmmo(ammo: number) {
+    public setAmmo(ammo: number) {
         this.ammo = ammo;
     }
 
-    togglePowerups(type: string, toggle: boolean) {
+    private togglePowerups(type: string, toggle: boolean) {
         switch (type) {
             case "star":
                 this.powerupBuffs.invincible = toggle;
@@ -278,23 +278,23 @@ class Player extends GameObject {
         }
     }
 
-    isInvisible(): boolean {
+    public isInvisible(): boolean {
         return this.powerupBuffs.invisible;
     }
 
-    isInvincible(): boolean {
+    public isInvincible(): boolean {
         return this.powerupBuffs.invincible;
     }
 
-    isMs(): boolean {
+    public isMs(): boolean {
         return this.powerupBuffs.ms;
     }
 
-    isFire(): boolean {
+    public isFire(): boolean {
         return this.debuffs.fire;
     }
 
-    isTrapped(): boolean {
+    public isTrapped(): boolean {
         return this.debuffs.trapped;
     }
 };
