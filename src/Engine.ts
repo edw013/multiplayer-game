@@ -6,17 +6,22 @@ import Bomb from "./common/Bomb";
 import QuadTree from "./QuadTree";
 
 const TICKRATE: number = 60;
+const INSET: number = 75;
 
 class Engine {
+    private roomId: string;
     private width: number;
     private height: number;
-    private players: any;
-    private tiles: any;
-    private projectiles: any;
-    private pendingMoves: any;
+    private players: {};
+    private numPlayers: number;
+    private numAlive: number;
+    private tiles: {};
+    private projectiles: {};
+    private pendingMoves: {};
     private updateInterval: any;
     private updatePlayers: any[];
     private updateProjectiles: any[];
+    private updateTiles: any[];
     private socket: socketIo.Server;
     private updateRate: number;
     private tree: QuadTree;
@@ -27,15 +32,19 @@ class Engine {
     private playerDeaths: any[];
     private projectileDeaths: any[];
 
-    public constructor(socket: socketIo.Server) {
+    public constructor(roomId: string, players: Set<string>, socket: socketIo.Server) {
+        this.roomId = roomId;
         this.width = 500;
         this.height = 500;
         this.players = {};
+        this.numPlayers = players.size;
+        this.numAlive = players.size;
         this.tiles = {};
         this.projectiles = {};
         this.pendingMoves = {};
         this.updatePlayers = [];
         this.updateProjectiles = [];
+        this.updateTiles = [];
         this.socket = socket;
         this.updateRate = TICKRATE;
 
@@ -49,17 +58,123 @@ class Engine {
         this.playerDeaths = [];
         this.projectileDeaths = [];
 
-        this.setUpdateInterval();
+        let self = this;
+        // add players
+        players.forEach(function(pid) {
+            self.players[pid] = new Player(pid);
+            self.pendingMoves[pid] = [];
+            self.tree.insert(self.players[pid]);
+        });
     }
 
-    public getDimensions(): any {
-        let dimensions: any = {};
-        dimensions.width = this.width;
-        dimensions.height = this.height;
+    public initializeGame() {
+        // set dimensions, changes based on number of players in game
+
+        this.socket.to(this.roomId).emit("boardDimensions", this.getDimensions());
+
+        // set up players and tiles
+        this.initializePlayers();
+
+        // spawn n - 1 tiles
+        for (let i: number = 0; i < this.numPlayers - 1; i++) {
+            // this is in its own method because we will use it again later
+            this.spawnTile();
+        }
+
+        // send initial positions to clients
+        /*let positions: any[] = []
+        for (let pid in this.players) {
+            let player: Player = this.players[pid];
+
+            let pObj: {id: string, xPos: number, yPos: number, type: string, fillColor: string, outlineColor: string} = {
+                id: player.getId(),
+                xPos: player.getX(),
+                yPos: player.getY(),
+                type: player.getObjType(),
+                fillColor: player.getColor(),
+                outlineColor: player.getOutlineColor()
+            };
+
+            positions.push(pObj);
+        }
+
+        for (let tid in this.tiles) {
+            let tile: Tile = this.tiles[tid];
+
+            let tObj: {id: string, xPos: number, yPos: number, type: string} = {
+                id: tile.getId(),
+                xPos: tile.getX(),
+                yPos: tile.getY(),
+                type: tile.getObjType()
+            }
+
+            positions.push(tObj);
+        }*/
+
+        this.sendPlayerState();
+        this.sendTileState();
+    }
+
+    public startCountdown() {
+        // set timer for 10s countdown to game start
+        // call this.setUpdateInterval when timer hits 0 to begin game
+        this.socket.to(this.roomId).emit("startCountdown");
+
+        setTimeout((function(self) {
+            return function() { 
+                self.setUpdateInterval();
+            };
+        })(this), 1000 * 3);
+    }
+
+    private endGame() {
+        clearInterval(this.updateInterval);
+
+        // called when updateinterval sees that all but one player (or all players) are dead.
+        // winner is either last person standing or in case of tie the player of the last two
+        // alive with the most kills
+        let winner = this.determineWinner();
+
+        this.socket.to(this.roomId).emit("winner", winner);
+
+        // move to wheel part
+    }
+
+    private determineWinner(): string {
+        if (this.numAlive === 1) {
+            for (let pid in this.players) {
+                let player: Player = this.players[pid];
+                if (player.isAlive()) {
+                    return player.getId();
+                }
+            }
+        }
+        
+        let mostKills: number = 0;
+        let id: string = null;
+
+        for (let pid in this.players) {
+            let player: Player = this.players[pid];
+
+            if (player.getNumKills() > mostKills) {
+                mostKills = player.getNumKills();
+                id = player.getId();
+            }
+        }
+
+        return id;
+    }
+
+    private getDimensions(): {width: number, height: number} {
+        let dimensions: {width: number, height: number} = {
+            width: this.width,
+            height: this.height
+        };
 
         return dimensions;
     }
 
+    /*
     // add a new player
     public addPlayer(id: string) {
         console.log("Engine: added " + id);
@@ -80,11 +195,72 @@ class Engine {
         delete this.players[id];
 
         this.socket.emit("removePlayer", id);
+    }*/
+
+    private initializePlayers() {
+        // calculate perimeter - maybe like 75 units or so in
+        let startPosWidth: number = this.width - (2 * INSET);
+        let startPosHeight: number = this.height - (2 * INSET);
+
+        let perimeter: number = (2 * startPosWidth) + (2 * startPosHeight);
+        let increment: number = Math.floor(perimeter / this.numPlayers);
+
+        // distribute players starting from 0
+        let curX: number = INSET;
+        let curY: number = INSET;
+        let minX: number = INSET;
+        let maxX: number = startPosWidth + INSET;
+        let minY: number = INSET;
+        let maxY: number = startPosHeight + INSET;
+        for (let pid in this.players) {
+            let player: Player = this.players[pid];
+            player.setX(curX);
+            player.setY(curY);
+
+            // circle around
+            // on top from left to right
+            if (curX < maxX && curY == minY) {
+                curX += increment;
+
+                if (curX > maxX) {
+                    curY += curX - maxX;
+                    curX = maxX;
+                }
+            }
+            // on right from top to bottom
+            // else is fine because it's simply impossible to traverse more than
+            // 2 sides at a time.
+            else if (curX == maxX && curY < maxY) {
+                curY += increment;
+
+                if (curY > maxY) {
+                    curX -= curY - maxY;
+                    curY = maxY;
+                }
+            }
+            // on bottom from right to left
+            else if (curX > minX && curY == maxY) {
+                curX -= increment;
+
+                if (curX < minX) {
+                    curY -= minX - curX;
+                    curX = minX;
+                }
+            }
+            // otherwise must be on left going from botton to top
+            // it's impossible to loop around because of our distribution
+            else {
+                curY -= increment;
+            }
+        }
     }
 
-    public spawnTile() {
-        let x = Math.floor(Math.random() * (this.width - 100)) + 50;
-        let y = Math.floor(Math.random() * (this.height - 100)) + 50;
+    private spawnTile() {
+        let tileInset: number =  4 * INSET;
+        let xBound: number = this.width - tileInset;
+        let yBound: number = this.height - tileInset;
+        let x: number = Math.floor(Math.random() * xBound) + tileInset;
+        let y: number = Math.floor(Math.random() * yBound) + tileInset;
 
         let id = this.tileCounter.toString();
         this.tileCounter++;
@@ -96,16 +272,12 @@ class Engine {
         this.tiles[id] = tile;
 
         this.tree.insert(tile);
-
-        this.socket.emit("newTile", {x: x, y: y});
     }
 
     private removeTile(id: string) {
         delete this.tiles[id];
 
         this.socket.emit("removeTile", id);
-
-        this.spawnTile();
     }
 
     // return all players
@@ -141,8 +313,18 @@ class Engine {
                 self.calculateCollisions();
                 self.sendPlayerState();
                 self.sendProjectileState();
+                self.sendTileState();
+                self.checkGameState();
             };
         })(this), 1000 / this.updateRate); // 60 times / sec
+    }
+
+    private checkGameState() {
+        if (this.numAlive > 1) {
+            return;
+        }
+
+        //this.endGame();
     }
 
     // process all pending
@@ -280,6 +462,8 @@ class Engine {
         if (player1.isInvincible()) {
             if (!player2.isInvincible()) {
                 player2.die("you touched an invincible player");
+                player1.incrementKills();
+                this.numAlive--;
             }
         }
 
@@ -287,13 +471,21 @@ class Engine {
             if (!player2.isInvincible()) {
                 if (!player2.isFire()) {
                     player2.die("someone lit you on fire!");
+                    player1.incrementKills();
+                    this.numAlive--;
                 }
             }
         }
 
+        /*
+        // can probably just do the first set of comparisons as the roles will
+        // be switched in a different comparison (if p1 can touch p2 then p2 can
+        // touch p1)
         if (player2.isInvincible()) {
             if (!player1.isInvincible()) {
                 player1.die("you touched an invincible player");
+                player2.incrementKills();
+                this.numAlive--;
             }
         }
 
@@ -301,9 +493,11 @@ class Engine {
             if (!player1.isInvincible()) {
                 if (!player1.isFire()) {
                     player1.die("someone lit you on fire");
+                    player2.incrementKills();
+                    this.numAlive--;
                 }
             }
-        }
+        }*/
     }
 
     private bulletCollision(pid: string, bid: string) {
@@ -317,6 +511,11 @@ class Engine {
 
         if (!player.isInvincible()) {
             player.die("you were hit by a bullet");
+
+            let playerKiller = this.players[bullet.getParentId()];
+            playerKiller.incrementKills();
+
+            this.numAlive--;
         }
 
         bullet.destroy();
@@ -333,6 +532,11 @@ class Engine {
 
         if (!player.isInvincible()) {
             player.die("you were blown up");
+
+            let playerKiller = this.players[bomb.getParentId()];
+            playerKiller.incrementKills();
+
+            this.numAlive--;
         }
     }
 
@@ -364,11 +568,11 @@ class Engine {
 
     private sendPlayerState() {
         for (let pid in this.players) {
-            let player = this.players[pid];
+            let player: Player = this.players[pid];
 
             if (!player.isAlive()) {
                 if (player.isRecentDead()) {
-                    this.playerDeaths.push({id: pid, reason: player.getDeathReason()});
+                    //this.playerDeaths.push({id: pid, reason: player.getDeathReason()});
 
                     player.resetRecentDead();
                 }
@@ -377,10 +581,12 @@ class Engine {
                 }
             }
 
-            this.updatePlayers.push({id: pid, ts: player.getLastTS(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY()});
+            this.socket.to(pid).emit("selfPlayerState", {ts: player.getLastTS(), alive: player.isAlive(), deathMessage: player.getDeathReason(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY(), outlineColor: player.getOutlineColor(), fillColor: player.getColor(), width: player.getWidth()});
+
+            this.updatePlayers.push({id: pid, width: player.getWidth(), x: player.getX(), y: player.getY(), powerups: player.getPowerups(), debuffs: player.getDebuffs(), outlineColor: player.getOutlineColor(), fillColor: player.getColor()});
         }
 
-        this.sendPlayerDeaths();
+        //this.sendPlayerDeaths();
 
         // send new server state
         this.socket.emit("playerState", this.updatePlayers);
@@ -409,13 +615,24 @@ class Engine {
                 bombExploded = (<Bomb> projectile).isExploded();
             }
 
-            this.updateProjectiles.push({id: id, x: projectile.getX(), y: projectile.getY(), exploded: bombExploded, type: projectile.getObjType()});
+            this.updateProjectiles.push({x: projectile.getX(), y: projectile.getY(), outlineColor: projectile.getOutlineColor(), fillColor: projectile.getColor(), width: projectile.getWidth()});
         }
 
-        this.sendProjectileDeaths();
+        //this.sendProjectileDeaths();
 
         this.socket.emit("projectileState", this.updateProjectiles);
         this.updateProjectiles = [];
+    }
+
+    private sendTileState() {
+        for (let id in this.tiles) {
+            let tile: Tile = this.tiles[id];
+
+            this.updateTiles.push({x: tile.getX(), y: tile.getY()})
+        }
+
+        this.socket.emit("tileState", this.updateTiles);
+        this.updateTiles = [];
     }
 
     public addItem(id: string, type: string) {
@@ -503,7 +720,7 @@ class Engine {
 
         let id = this.projectileCounter.toString();
         this.projectileCounter++;
-        let bullet = new Bullet(id, initX, initY, deltaX, deltaY);
+        let bullet = new Bullet(id, pid, initX, initY, deltaX, deltaY);
 
         this.projectiles[id] = bullet;
 
@@ -523,7 +740,7 @@ class Engine {
 
         let id = this.projectileCounter.toString();
         this.projectileCounter++;
-        let bomb = new Bomb(id, targetX, targetY);
+        let bomb = new Bomb(id, pid, targetX, targetY);
 
         this.projectiles[id] = bomb;
         bomb.start();

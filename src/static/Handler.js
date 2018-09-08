@@ -49,7 +49,7 @@ socket.on("curTiles", function(data) {
     client.setTiles(data);
 });
 
-socket.on("canvasSize", function(dimensions) {
+socket.on("boardDimensions", function(dimensions) {
     element("client_canvas").width = dimensions.width;
     element("client_canvas").height = dimensions.height;
 });
@@ -59,11 +59,11 @@ socket.on("removePlayer", function(id) {
 });
 
 socket.on("newTile", function(data) {
-    client.addTile(data);
+    //client.addTile(data);
 });
 
 socket.on("removeTile", function(id) {
-    client.removeTile(id);
+    //client.removeTile(id);
 });
 
 socket.on("death", function(data) {
@@ -77,15 +77,24 @@ socket.on("projectileDeath", function(data) {
         client.addServerProjectileDeath(data[i]);
     }
 });
+socket.on("selfPlayerState", function(data) {
+    console.log(data);
+    client.addSelfUpdate(data);
+});
 
 socket.on("playerState", function(data) {
-    for (let i = 0; i < data.length; i++) {
-        client.addServerPlayerPosition(data[i]);
-    }
+    console.log(data);
+    client.addServerPlayerPosition(data);
 });
 
 socket.on("projectileState", function(data) {
-    for (let i = 0; i < data.length; i++) {
-        client.addServerProjectilePosition(data[i]);
-    }
+    client.addServerProjectilePosition(data);
+});
+
+socket.on("tileState", function(data){
+    client.addServerTilePosition(data);
+});
+
+socket.on("startCountdown", function() {
+    client.initialize();
 });

@@ -1,4 +1,4 @@
-class GameObject {
+abstract class GameObject {
     protected id: string;
     protected xPos: number;
     protected yPos: number;
@@ -57,10 +57,18 @@ class GameObject {
         this.height = height;
     }
 
+    public setColor(color: string) {
+        this.color = color;
+    }
+
     public getColor(): string {
         return this.color;
     }
 
+    public setOutlineColor(color: string) {
+        this.outlineColor = color;
+    }
+    
     public getOutlineColor(): string {
         return this.outlineColor;
     }

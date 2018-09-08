@@ -1,11 +1,12 @@
 import GameObject from "./GameObject";
 
 class Bullet extends GameObject {
+    private parentId: string;
     private ySpeed: number;
     private xSpeed: number;
     private destroyed: boolean;
 
-    public constructor(id: string, initX: number, initY: number, deltaX: number, deltaY: number) {
+    public constructor(id: string, pid: string, initX: number, initY: number, deltaX: number, deltaY: number) {
         super(id);
 
         this.objType = "bullet";
@@ -16,6 +17,8 @@ class Bullet extends GameObject {
         this.outlineColor = "black";
 
         let ms = 400;
+
+        this.parentId = pid;
 
         let xDir = (deltaX < 0) ? -1 : 1;
         let yDir = (deltaY < 0) ? -1 : 1;
@@ -31,6 +34,10 @@ class Bullet extends GameObject {
         this.yPos = initY + deltaY * ratio;
 
         this.destroyed = false;
+    }
+
+    public getParentId(): string {
+        return this.parentId;
     }
 
     public updatePosition(rate: number) {

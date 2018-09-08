@@ -17,9 +17,11 @@ class Client {
     private lastTS;
     private movement: {};
     private savedMoves: any[];
+    private selfUpdate: any;
     private serverPlayerMessages: any[];
     private serverPlayerDeaths: any[];
     private serverProjectileMessages: any[];
+    private serverTileMessages: any[];
     private serverProjectileDeaths: string[];
     private canvas;
     private item;
@@ -44,7 +46,7 @@ class Client {
 
         this.projectiles = {};
 
-        this.setUpdateInterval();
+        //this.setUpdateInterval();
 
         this.lastTS = Date.now();
 
@@ -60,6 +62,7 @@ class Client {
         this.serverPlayerDeaths = [];
         this.serverProjectileMessages = [];
         this.serverProjectileDeaths = [];
+        this.serverTileMessages = [];
 
         this.canvas = canvas;
         this.item = item;
@@ -70,19 +73,42 @@ class Client {
         this.deathMessage = deathMessage;
     }
 
+    public initialize() {
+        let message = this.selfUpdate;
+        this.selfUpdate = null;
+        this.player.setX(message.x);
+        this.player.setY(message.y);
+        this.player.setColor(message.fillColor);
+        this.player.setOutlineColor(message.outlineColor);
+        this.player.setWidth(message.width);
+
+        this.repaint();
+        // countdown
+        setTimeout((function(self) {
+            return function() {
+                console.log("starting"); 
+                self.setUpdateInterval();
+            };
+        })(this), 1000 * 3);
+    }
+
     private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
         this.updateInterval = setInterval((function(self) {
             return function () {
                 self.updatePlayerPositions();
-                self.processServerPositions();
+                self.updateSelfPosition();
+                //self.processServerPositions();
                 self.repaint();
             };
         })(this), 1000.0 / TICKRATE);
     }
 
-    public removePlayer(id: string) {
+    public addSelfUpdate(data) {
+        this.selfUpdate = data;
+    }
+    /*public removePlayer(id: string) {
         this.removePlayers.push(id);
     }
 
@@ -125,14 +151,15 @@ class Client {
             this.tiles[id].setX(tile.xPos);
             this.tiles[id].setY(tile.yPos);
         }
-    }
+    } */
 
     public addServerPlayerDeath(data) {
         this.serverPlayerDeaths.push(data);
     }
 
     public addServerPlayerPosition(data) {
-        this.serverPlayerMessages.push(data);
+        //this.serverPlayerMessages.push(data);
+        this.serverPlayerMessages = data;
     }
 
     public addServerProjectileDeath(data) {
@@ -140,7 +167,11 @@ class Client {
     }
     
     public addServerProjectilePosition(data) {
-        this.serverProjectileMessages.push(data);
+        this.serverProjectileMessages = data;
+    }
+
+    public addServerTilePosition(data) {
+        this.serverTileMessages = data;
     }
 
     private updatePlayerPositions() {
@@ -151,7 +182,7 @@ class Client {
 
         let input;
         if (this.movement["up"] || this.movement["down"] || this.movement["left"] || this.movement["right"]) {
-            input = {id: this.playerId, pressTime: pressTime, movement: this.movement, ts: now};
+            input = {room: "test", id: this.playerId, pressTime: pressTime, movement: this.movement, ts: now};
         }
         else {
             return;
@@ -168,7 +199,7 @@ class Client {
         }
     }
 
-    private processServerPositions() {
+    /* private processServerPositions() {
         while (this.serverPlayerDeaths.length > 0) {
             let data = this.serverPlayerDeaths.shift();
             let pid = data.id;
@@ -228,33 +259,43 @@ class Client {
 
             delete this.players[id];
         }
+    } */
+
+    private updateSelfPosition() {
+        if (this.selfUpdate) {
+            let message = this.selfUpdate;
+            this.selfUpdate = null;
+            let serverTS = message.ts;
+            this.player.setX(message.x);
+            this.player.setY(message.y);
+
+            if (message.alive === false) {
+                this.player.die(message.deathMessage);
+                this.deathMessage.innerHTML = this.player.getDeathReason();
+            }
+
+            this.item.innerHTML = message.item;
+
+            this.player.setPowerups(message.powerups);
+            this.setPowerupMessage();
+
+            this.player.setWeapon(message.weapon);
+            this.player.setAmmo(message.ammo);
+            this.setWeaponMessage();
+            
+            this.player.setDebuffs(message.debuffs);
+            this.setDebuffMessage();
+
+            this.savedMoves = this.savedMoves.filter(savedMove => {savedMove.ts > serverTS});
+
+            this.savedMoves.forEach(savedMove => {
+                this.player.applyInput(savedMove);
+            });
+        }  
+        this.selfUpdate = null;
     }
 
-    private updateSelfPosition(message) {
-        let serverTS = message.ts;
-        this.player.setX(message.x);
-        this.player.setY(message.y);
-
-        this.item.innerHTML = message.item;
-
-        this.player.setPowerups(message.powerups);
-        this.setPowerupMessage();
-
-        this.player.setWeapon(message.weapon);
-        this.player.setAmmo(message.ammo);
-        this.setWeaponMessage();
-        
-        this.player.setDebuffs(message.debuffs);
-        this.setDebuffMessage();
-
-        this.savedMoves = this.savedMoves.filter(savedMove => {savedMove.ts > serverTS});
-
-        this.savedMoves.forEach(savedMove => {
-            this.player.applyInput(savedMove);
-        });
-    }
-
-    private updateOtherPosition(message) {
+    /*private updateOtherPosition(message) {
         if (!this.players[message.id]) {
             this.players[message.id] = new Player(message.id);
         }
@@ -268,10 +309,10 @@ class Client {
         player.setAmmo(message.ammo);
         player.setPowerups(message.powerups);
         player.setDebuffs(message.debuffs);
-    }
+    } */
 
     public useItem() {
-        this.socket.emit("useItem", this.playerId);
+        this.socket.emit("useItem", {room: "test", id: this.playerId});
     }
 
     public shot(x: number, y: number) {
@@ -279,7 +320,7 @@ class Client {
             return;
         }
 
-        this.socket.emit("shoot", {id: this.playerId, x: x, y: y});
+        this.socket.emit("shoot", {room: "test", id: this.playerId, x: x, y: y});
     }
 
     private setWeaponMessage() {
@@ -329,7 +370,124 @@ class Client {
         let ctx = this.canvas.getContext("2d");
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        for (let key in this.players) {
+        if (this.player.isAlive()) {
+            let radius = this.player.getWidth() / 2;
+            let x = this.player.getX();
+            let y = this.player.getY();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2*Math.PI, false);
+
+            if (this.player.isInvisible()) {
+                ctx.globalAlpha = 0.5;
+            }
+            if (this.player.isInvincible()) {
+                ctx.strokeStyle = "yellow";
+            }
+            else if (this.player.isFire()) {
+                ctx.strokeStyle = "red";
+            }
+            else if (this.player.isMs()) {
+                ctx.strokeStyle = "blue";
+            }
+            else if (this.player.isTrapped()) {
+                ctx.strokeStyle = "black";
+            }
+            else {
+                ctx.strokeStyle = this.player.getOutlineColor();
+            }
+
+            ctx.fillStyle = this.player.getColor();
+            ctx.lineWidth = 5;
+
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+            
+        for (let i: number = 0; i < this.serverPlayerMessages.length; i++) {
+            let message = this.serverPlayerMessages[i];
+
+            if (message.id === this.playerId) {
+                continue;
+            }
+
+            let radius: number = message.width / 2;
+            let x: number = message.x;
+            let y: number = message.y;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+
+            if (message.powerups.invisible === true) {
+                continue;
+            }
+            if (message.powerups.invincible === true) {
+                ctx.strokeStyle = "yellow";
+            }
+            else if (message.debuffs.fire === true) {
+                ctx.strokeStyle = "red";
+            }
+            else if (message.powerups.ms === true) {
+                ctx.strokeStyle = "blue";
+            }
+            else if (message.debuffs.trapped === true) {
+                ctx.strokeStyle = "black";
+            }
+            else {
+                ctx.strokeStyle = message.outlineColor;
+            }
+
+            ctx.fillStyle = message.fillColor;
+            ctx.lineWidth = 5;
+
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        for (let i: number = 0; i < this.serverProjectileMessages.length; i++) {
+            let message = this.serverProjectileMessages[i];
+
+            let radius: number = message.width / 2;
+            let x: number = message.x;
+            let y: number = message.y;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+            ctx.strokeStyle = message.outlineColor;
+            ctx.fillStyle = message.fillColor;
+            ctx.lineWidth = 5;
+
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        for (let i: number = 0; i < this.serverTileMessages.length; i++) {
+            let message = this.serverTileMessages[i];
+
+            let topLeftX = message.x - 25;
+            let topLeftY = message.y - 25;
+    
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(topLeftX, topLeftY, 50, 50);
+
+            ctx.fillStyle = "yellow";
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 5;
+            
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+        /*for (let key in this.players) {
             let player: Player = this.players[key];
 
             if (!player.isAlive()) {
@@ -413,7 +571,9 @@ class Client {
             ctx.fill();
             ctx.stroke();
             ctx.restore();
-        }
+        } */
+
+
     }
 }
 

@@ -1,10 +1,11 @@
 import GameObject from "./GameObject";
 
 class Bomb extends GameObject {
+    private parentId: string;
     private exploded: boolean;
     private destroyed: boolean;
 
-    public constructor(id, targetX, targetY) {
+    public constructor(id: string, pid: string, targetX: number, targetY: number) {
         super(id);
 
         this.width = 40;
@@ -18,8 +19,13 @@ class Bomb extends GameObject {
         this.xPos = targetX;
         this.yPos = targetY;
 
+        this.parentId = pid;
         this.exploded = false;
         this.destroyed = false;
+    }
+
+    public getParentId(): string {
+        return this.parentId;
     }
 
     public destroy() {
