@@ -94,6 +94,10 @@ class Engine {
         })(this), 1000 * 3);
     }
 
+    public shutdown() {
+        clearInterval(this.updateInterval);
+    }
+    
     private endGame() {
         clearInterval(this.updateInterval);
 

@@ -10,6 +10,7 @@ class Room {
     private engine: Engine;
     private socket: socketIo.Server;
     private ready: boolean;
+    private started: boolean;
 
     public constructor(id: string, roomSize: number, roomOwner: string, socket: socketIo.Server) {
         this.id = id;
@@ -20,6 +21,7 @@ class Room {
         this.players = new Set<string>();
         this.numPlayers = 0;
         this.ready = false;
+        this.started = false;
 
         this.addPlayer(roomOwner);
     }
@@ -57,7 +59,7 @@ class Room {
     }
 
     public start(id: string) {
-        if (!this.ready || id != this.roomOwner) {
+        if (!this.ready || id != this.roomOwner || this.started) {
             return;
         }
 
@@ -69,8 +71,13 @@ class Room {
 
         console.log("starting game in room " + this.id);
 
+        this.started = true;
         this.engine.initializeGame();
         this.engine.startCountdown();
+    }
+
+    public delete() {
+        this.engine.shutdown();
     }
 
     public addMove(move) {

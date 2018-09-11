@@ -60,6 +60,9 @@ createRoomButton.addEventListener("click", createRoom);
 
 socket.on("currentRooms", function(rooms) {
     let curRooms = element("currentRooms");
+    for (let opt in curRooms.options) { 
+        curRooms.options.remove(0); 
+    }
     for (let i = 0; i < rooms.length; i++) {
         let room = rooms[i];
         let opt = document.createElement("option")
@@ -115,6 +118,7 @@ socket.on("selfPlayerState", function(data) {
 });
 
 socket.on("playerState", function(data) {
+    console.log(data);
     client.addServerPlayerPosition(data);
 });
 

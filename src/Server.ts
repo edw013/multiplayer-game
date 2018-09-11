@@ -55,6 +55,7 @@ io.on("connection", function(socket) {
         let newOwner: string = room.removePlayer(socket.id);
 
         if (newOwner === null) {
+            rooms[socket.room].delete();
             delete rooms[socket.room];
 
             console.log("deleted room " + socket.room);
@@ -137,6 +138,7 @@ io.on("connection", function(socket) {
         let newOwner: string = room.removePlayer(socket.id);
 
         if (newOwner === null) {
+            rooms[socket.room].delete();
             delete rooms[socket.room];
 
             console.log("deleted " + socket.room);

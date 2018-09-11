@@ -4,7 +4,6 @@ const TICKRATE: number = 60;
 
 class Client {
     private roomId: string;
-    private players: {};
     private player: Player;
     private playerId: string;
     private updateInterval;
@@ -27,28 +26,8 @@ class Client {
     
     public constructor(socket, canvas, room, item, powerup, weapon, ammo, debuff, deathMessage) {
         this.socket = socket;
-        
-        this.roomId = null;
 
         this.playerId = this.socket.id;
-        this.player = new Player(this.playerId);
-
-        this.players = {};
-        this.players[this.playerId] = this.player;
-
-        this.lastTS = Date.now();
-
-        this.movement = {};
-        this.movement["up"] = false;
-        this.movement["down"] = false;
-        this.movement["right"] = false;
-        this.movement["left"] = false;
-
-        this.savedMoves = [];
-
-        this.serverPlayerMessages = [];
-        this.serverProjectileMessages = [];
-        this.serverTileMessages = [];
 
         this.canvas = canvas;
         this.room = room;
@@ -63,6 +42,7 @@ class Client {
     public initialize() {
         let message = this.selfUpdate;
         this.selfUpdate = null;
+        this.player = new Player(this.playerId);
         this.player.setX(message.x);
         this.player.setY(message.y);
         this.player.setColor(message.fillColor);
@@ -79,6 +59,20 @@ class Client {
     }
 
     public startGame() {
+        this.lastTS = Date.now();
+
+        this.movement = {};
+        this.movement["up"] = false;
+        this.movement["down"] = false;
+        this.movement["right"] = false;
+        this.movement["left"] = false;
+
+        this.savedMoves = [];
+
+        this.serverPlayerMessages = [];
+        this.serverProjectileMessages = [];
+        this.serverTileMessages = [];
+
         this.setUpdateInterval();
     }
 
@@ -138,10 +132,21 @@ class Client {
         let self = this;
         this.socket.emit("leaveRoom", function(left) {
             if (left) {
-                self.roomId = null;
-                self.room.innerHTML = "Not in room";
+                self.reset()
             }
         });
+    }
+
+    private reset() {
+        clearInterval(this.updateInterval);
+
+        this.room.innerHTML = "Not in room";
+        this.item.innerHTML = "";
+        this.powerup.innerHTML = "";
+        this.weapon.innerHTML = "";
+        this.ammo.innerHTML = "";
+        this.debuff.innerHTML = "";
+        this.deathMessage.innerHTML = "";
     }
 
     public signalStartGame() {
