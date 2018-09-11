@@ -6,6 +6,7 @@ import Bomb from "../common/Bomb";
 const TICKRATE: number = 60;
 
 class Client {
+    private roomId: string;
     private players: {};
     private player: Player;
     private playerId: string;
@@ -24,6 +25,7 @@ class Client {
     private serverTileMessages: any[];
     private serverProjectileDeaths: string[];
     private canvas;
+    private room;
     private item;
     private powerup;
     private weapon;
@@ -31,9 +33,11 @@ class Client {
     private debuff;
     private deathMessage;
     
-    public constructor(socket, canvas, item, powerup, weapon, ammo, debuff, deathMessage) {
+    public constructor(socket, canvas, room, item, powerup, weapon, ammo, debuff, deathMessage) {
         this.socket = socket;
         
+        this.roomId = null;
+
         this.playerId = this.socket.id;
         this.player = new Player(this.playerId);
 
@@ -65,6 +69,7 @@ class Client {
         this.serverTileMessages = [];
 
         this.canvas = canvas;
+        this.room = room;
         this.item = item;
         this.powerup = powerup;
         this.weapon = weapon;
@@ -83,13 +88,16 @@ class Client {
         this.player.setWidth(message.width);
 
         this.repaint();
-        // countdown
+        // countdown??
         setTimeout((function(self) {
             return function() {
                 console.log("starting"); 
-                self.setUpdateInterval();
             };
         })(this), 1000 * 3);
+    }
+
+    public startGame() {
+        this.setUpdateInterval();
     }
 
     private setUpdateInterval() {
@@ -108,6 +116,61 @@ class Client {
     public addSelfUpdate(data) {
         this.selfUpdate = data;
     }
+
+    public createRoom(roomId: string, numUsers: number) {
+        if (roomId === null) {
+            return;
+        }
+
+        if (numUsers < 2) {
+            return;
+        }
+
+        let self = this;
+        this.socket.emit("createRoom", {roomId: roomId, numUsers: numUsers}, function(created) {
+            if (created) {
+                self.roomId = roomId;
+                self.room.innerHTML = roomId;
+            }
+        });
+    }
+
+    public joinRoom(roomId: string) {
+        if (roomId === null) {
+            return;
+        }
+
+        let self = this;
+        this.socket.emit("joinRoom", roomId, function(joined) {
+            if (joined) {
+                self.roomId = roomId;
+                self.room.innerHTML = roomId;
+            }
+        });
+    }
+    
+    public leaveRoom() {
+        if (this.roomId === null) {
+            return;
+        }
+
+        let self = this;
+        this.socket.emit("leaveRoom", function(left) {
+            if (left) {
+                self.roomId = null;
+                self.room.innerHTML = "Not in room";
+            }
+        });
+    }
+
+    public signalStartGame() {
+        if (this.roomId === null) {
+            return;
+        }
+
+        this.socket.emit("startGame", this.roomId);
+    }
+
     /*public removePlayer(id: string) {
         this.removePlayers.push(id);
     }
@@ -182,7 +245,7 @@ class Client {
 
         let input;
         if (this.movement["up"] || this.movement["down"] || this.movement["left"] || this.movement["right"]) {
-            input = {room: "test", id: this.playerId, pressTime: pressTime, movement: this.movement, ts: now};
+            input = {room: this.roomId, id: this.playerId, pressTime: pressTime, movement: this.movement, ts: now};
         }
         else {
             return;
@@ -194,7 +257,7 @@ class Client {
 
         this.savedMoves.push(input);
 
-        while(this.savedMoves.length > 30) {
+        while(this.savedMoves.length > 120) {
             this.savedMoves.shift();
         }
     }
@@ -312,7 +375,7 @@ class Client {
     } */
 
     public useItem() {
-        this.socket.emit("useItem", {room: "test", id: this.playerId});
+        this.socket.emit("useItem", {room: this.roomId, id: this.playerId});
     }
 
     public shot(x: number, y: number) {
@@ -320,7 +383,7 @@ class Client {
             return;
         }
 
-        this.socket.emit("shoot", {room: "test", id: this.playerId, x: x, y: y});
+        this.socket.emit("shoot", {room: this.roomId, id: this.playerId, x: x, y: y});
     }
 
     private setWeaponMessage() {

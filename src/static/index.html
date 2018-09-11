@@ -10,6 +10,17 @@
 </head>
 
 <body>
+    In room: <span id="inRoom">Not in room</span><br />
+    <button id="createRoom">Create a new room</button>
+    Room name: <input id="roomName" type="text" maxlength="16" />
+    Num users: <input id="roomNumUsers" type="number" />
+    <br />
+    <button id="joinRoom">Join an existing room</button>
+    <select id="currentRooms"></select>
+    <br />
+    <button id="leaveRoom">Leave current room</button>
+    <button id="startGame">Start game in room (will only work if you are room owner!)</button>
+    <br />
     Available item: <span id="item"></span><br />
     Current power up: <span id="powerup"></span><br />
     Current weapon: <span id="weapon"></span><br />

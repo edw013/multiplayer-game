@@ -21,17 +21,23 @@ class Room {
         this.numPlayers = 0;
         this.ready = false;
 
-        //this.addPlayer(roomOwner);
+        this.addPlayer(roomOwner);
     }
 
-    public addPlayer(id: string) {
+    public addPlayer(id: string): boolean {
+        // at capacity
+        if (this.ready) {
+            return false;
+        }
+
         this.players.add(id);
         this.numPlayers++;
 
         if (this.numPlayers == this.roomSize) {
             this.ready = true;
-            this.start("aaa")
         }
+
+        return true;
     }
 
     public removePlayer(id: string): string {
@@ -41,7 +47,7 @@ class Room {
         this.ready = false;
 
         if (this.numPlayers > 0) {
-            this.roomOwner = this.players[0];
+            this.roomOwner = this.players.values().next().value;
         }
         else {
             this.roomOwner = null;
@@ -59,7 +65,7 @@ class Room {
         this.engine = new Engine(this.id, this.players, this.socket);
 
         // move to game board
-        this.socket.to(this.id).emit("moveToGame");
+        // this.socket.to(this.id).emit("moveToGame");
 
         console.log("starting game in room " + this.id);
 

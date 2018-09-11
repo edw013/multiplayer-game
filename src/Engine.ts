@@ -121,7 +121,8 @@ class Engine {
         this.socket.to(this.roomId).emit("startCountdown");
 
         setTimeout((function(self) {
-            return function() { 
+            return function() {
+                self.socket.to(self.roomId).emit("startGame");
                 self.setUpdateInterval();
             };
         })(this), 1000 * 3);
@@ -277,7 +278,7 @@ class Engine {
     private removeTile(id: string) {
         delete this.tiles[id];
 
-        this.socket.emit("removeTile", id);
+        this.socket.to(this.roomId).emit("removeTile", id);
     }
 
     // return all players
@@ -558,7 +559,9 @@ class Engine {
 
         player.addItem(tile.getType());
 
-        this.removeTile(tid);
+        delete this.tiles[tid];
+
+        //this.removeTile(tid);
     }
 
     private sendPlayerDeaths() {
@@ -589,7 +592,7 @@ class Engine {
         //this.sendPlayerDeaths();
 
         // send new server state
-        this.socket.emit("playerState", this.updatePlayers);
+        this.socket.to(this.roomId).emit("playerState", this.updatePlayers);
         this.updatePlayers = [];
     }
 
@@ -620,7 +623,7 @@ class Engine {
 
         //this.sendProjectileDeaths();
 
-        this.socket.emit("projectileState", this.updateProjectiles);
+        this.socket.to(this.roomId).emit("projectileState", this.updateProjectiles);
         this.updateProjectiles = [];
     }
 
@@ -631,7 +634,7 @@ class Engine {
             this.updateTiles.push({x: tile.getX(), y: tile.getY()})
         }
 
-        this.socket.emit("tileState", this.updateTiles);
+        this.socket.to(this.roomId).emit("tileState", this.updateTiles);
         this.updateTiles = [];
     }
 
