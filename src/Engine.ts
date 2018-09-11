@@ -29,8 +29,6 @@ class Engine {
     private projectileCounter: number;
     private itemQueue: string[];
     private shotQueue: any[];
-    private playerDeaths: any[];
-    private projectileDeaths: any[];
 
     public constructor(roomId: string, players: Set<string>, socket: socketIo.Server) {
         this.roomId = roomId;
@@ -55,8 +53,6 @@ class Engine {
 
         this.itemQueue = [];
         this.shotQueue = [];
-        this.playerDeaths = [];
-        this.projectileDeaths = [];
 
         let self = this;
         // add players
@@ -220,21 +216,6 @@ class Engine {
         this.tiles[id] = tile;
 
         this.tree.insert(tile);
-    }
-
-    private removeTile(id: string) {
-        delete this.tiles[id];
-
-        this.socket.to(this.roomId).emit("removeTile", id);
-    }
-
-    // return all players
-    public getPlayers() {
-        return this.players;
-    }
-
-    public getTiles() {
-        return this.tiles;
     }
 
     // add a move to process
@@ -487,11 +468,6 @@ class Engine {
         delete this.tiles[tid];
     }
 
-    private sendPlayerDeaths() {
-        this.socket.emit("death", this.playerDeaths);
-        this.playerDeaths = [];
-    }
-
     private sendPlayerState() {
         for (let pid in this.players) {
             let player: Player = this.players[pid];
@@ -514,32 +490,18 @@ class Engine {
         this.updatePlayers = [];
     }
 
-    private sendProjectileDeaths() {
-        this.socket.emit("projectileDeath", this.projectileDeaths);
-        this.projectileDeaths = [];
-    }
-
     private sendProjectileState() {
         for (let id in this.projectiles) {
             let projectile = this.projectiles[id];
 
             if (projectile.isDestroyed()) {
-                this.projectileDeaths.push(id);
-
                 delete this.projectiles[id];
 
                 continue;
             }
 
-            let bombExploded = false;
-            if (projectile.getObjType() == "bomb") {
-                bombExploded = (<Bomb> projectile).isExploded();
-            }
-
             this.updateProjectiles.push({x: projectile.getX(), y: projectile.getY(), outlineColor: projectile.getOutlineColor(), fillColor: projectile.getColor(), width: projectile.getWidth()});
         }
-
-        //this.sendProjectileDeaths();
 
         this.socket.to(this.roomId).emit("projectileState", this.updateProjectiles);
         this.updateProjectiles = [];
