@@ -54,12 +54,11 @@ class Engine {
         this.itemQueue = [];
         this.shotQueue = [];
 
-        let self = this;
         // add players
-        players.forEach(function(pid) {
-            self.players[pid] = new Player(pid);
-            self.pendingMoves[pid] = [];
-            self.tree.insert(self.players[pid]);
+        players.forEach(pid => {
+            this.players[pid] = new Player(pid);
+            this.pendingMoves[pid] = [];
+            this.tree.insert(this.players[pid]);
         });
     }
 
@@ -86,12 +85,10 @@ class Engine {
         // call this.setUpdateInterval when timer hits 0 to begin game
         this.socket.to(this.roomId).emit("startCountdown");
 
-        setTimeout((function(self) {
-            return function() {
-                self.socket.to(self.roomId).emit("startGame");
-                self.setUpdateInterval();
-            };
-        })(this), 1000 * 3);
+        setTimeout(() => {
+            this.socket.to(this.roomId).emit("startGame");
+            this.setUpdateInterval();
+        }, 1000 * 3);
     }
 
     public shutdown() {
@@ -238,18 +235,16 @@ class Engine {
     private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
-        this.updateInterval = setInterval((function(self) {
-            return function() {
-                self.processItemUses();
-                self.processChanges();
-                self.processShots();
-                self.calculateCollisions();
-                self.sendPlayerState();
-                self.sendProjectileState();
-                self.sendTileState();
-                self.checkGameState();
-            };
-        })(this), 1000 / this.updateRate); // 60 times / sec
+        this.updateInterval = setInterval(() => {
+            this.processItemUses();
+            this.processChanges();
+            this.processShots();
+            this.calculateCollisions();
+            this.sendPlayerState();
+            this.sendProjectileState();
+            this.sendTileState();
+            this.checkGameState();
+        }, 1000 / this.updateRate); // 60 times / sec
     }
 
     private checkGameState() {

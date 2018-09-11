@@ -61,7 +61,7 @@ io.on("connection", function(socket) {
             console.log("deleted room " + socket.room);
         }
         else {
-            console.log(newOwner);
+            console.log("transferring ownership of " + socket.room + " to " + newOwner);
             io.to(newOwner).emit("newRoomOwner");
         }
 
@@ -146,6 +146,7 @@ io.on("connection", function(socket) {
             io.emit("currentRooms", getCurRooms());
         }
         else {
+            console.log("transferring ownership of " + socket.room + " to " + newOwner);
             io.to(newOwner).emit("newRoomOwner");
         }
 

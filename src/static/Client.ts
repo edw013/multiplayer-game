@@ -79,13 +79,11 @@ class Client {
     private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
-        this.updateInterval = setInterval((function(self) {
-            return function () {
-                self.updatePlayerPositions();
-                self.updateSelfPosition();
-                self.repaint();
-            };
-        })(this), 1000.0 / TICKRATE);
+        this.updateInterval = setInterval(() => {
+                this.updatePlayerPositions();
+                this.updateSelfPosition();
+                this.repaint();
+        }, 1000.0 / TICKRATE);
     }
 
     public addSelfUpdate(data) {
@@ -101,11 +99,10 @@ class Client {
             return;
         }
 
-        let self = this;
-        this.socket.emit("createRoom", {roomId: roomId, numUsers: numUsers}, function(created) {
+        this.socket.emit("createRoom", {roomId: roomId, numUsers: numUsers}, created => {
             if (created) {
-                self.roomId = roomId;
-                self.room.innerHTML = roomId;
+                this.roomId = roomId;
+                this.room.innerHTML = roomId;
             }
         });
     }
@@ -115,11 +112,10 @@ class Client {
             return;
         }
 
-        let self = this;
-        this.socket.emit("joinRoom", roomId, function(joined) {
+        this.socket.emit("joinRoom", roomId, joined => {
             if (joined) {
-                self.roomId = roomId;
-                self.room.innerHTML = roomId;
+                this.roomId = roomId;
+                this.room.innerHTML = roomId;
             }
         });
     }
@@ -129,10 +125,9 @@ class Client {
             return;
         }
 
-        let self = this;
-        this.socket.emit("leaveRoom", function(left) {
+        this.socket.emit("leaveRoom", left => {
             if (left) {
-                self.reset()
+                this.reset()
             }
         });
     }

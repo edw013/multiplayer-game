@@ -37,11 +37,9 @@ class Bomb extends GameObject {
     }
 
     public start() {
-        setTimeout((function(self) {
-            return function() {
-                self.explode();
-            };
-        })(this), 1000 * 3);
+        setTimeout(() => {
+            this.explode();
+        }, 1000 * 3);
     }
 
     public explode() {
@@ -50,11 +48,9 @@ class Bomb extends GameObject {
         this.height = 120;
         this.exploded = true;
 
-        setTimeout((function(self) {
-            return function() {
-                self.destroy();
-            };
-        })(this), 1000 * 0.5);
+        setTimeout(() => {
+            this.destroy();
+        }, 1000 * 0.5);
     }
 
     public isExploded(): boolean {
