@@ -2,7 +2,6 @@ import * as express from "express";
 import * as http from "http";
 import * as socketIo from "socket.io";
 import Room from "./Room";
-import Engine from "./Engine";
 
 // dependencies
 const app: express.Application = express();
@@ -42,9 +41,6 @@ io.on("connection", function(socket) {
     socket.room = null;
 
     io.to(socket.id).emit("currentRooms", getCurRooms());
-
-    /* socket.join("test");
-    rooms["test"].addPlayer(socket.id);*/
 
     socket.on("disconnect", function(){
         console.log("a user disconnected");
@@ -216,67 +212,3 @@ io.on("connection", function(socket) {
     // all game calls will have to include which game they're part of,
     // we'll handle delegating to appropriate room here
 });
-
-/*
-// create our engine. this will be a room later which will run an engine
-let engine = new Engine(io);
-
-engine.spawnTile();
-
-// socket
-io.on("connection", function(socket: any){
-    console.log("a user connected");
-
-    // todo: another layer above engine, room, which needs to be filled first
-    engine.addPlayer(socket.id);
-
-    // immediately see other players
-    let players = engine.getPlayers();
-    io.to(socket.id).emit("curPlayers", players);
-
-    // immediately see other tiles
-    let tiles = engine.getTiles();
-    io.to(socket.id).emit("curTiles", tiles);
-
-    // resize board
-    let dimensions: any = engine.getDimensions();
-    io.to(socket.id).emit("canvasSize", dimensions);
-
-    // movement inputs from players
-    socket.on("move", function(input: any) {
-        engine.addMove(input);
-    });
-
-    socket.on("useItem", function(id: string) {
-      engine.itemUse(id);
-    });
-
-    socket.on("shoot", function(data: any) {
-      engine.registerShot(data);
-    })
-
-    socket.on("disconnect", function(){
-      engine.removePlayer(socket.id);
-      console.log("a user disconnected");
-    });  // resize board
-    let dimensions: any = engine.getDimensions();
-    io.to(socket.id).emit("canvasSize", dimensions);
-
-    // movement inputs from players
-    socket.on("move", function(input: any) {
-        engine.addMove(input);
-    });
-
-    socket.on("useItem", function(id: string) {
-      engine.itemUse(id);
-    });
-
-    socket.on("shoot", function(data: any) {
-      engine.registerShot(data);
-    })
-
-    socket.on("disconnect", function(){
-      engine.removePlayer(socket.id);
-      console.log("a user disconnected");
-    });
-});*/

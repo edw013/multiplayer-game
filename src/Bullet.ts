@@ -1,4 +1,4 @@
-import GameObject from "./GameObject";
+import GameObject from "./common/GameObject";
 
 class Bullet extends GameObject {
     private parentId: string;

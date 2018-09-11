@@ -1,4 +1,4 @@
-import GameObject from "./GameObject";
+import GameObject from "./common/GameObject";
 
 const LUCK: number = 0.7;
 // "star", "ms", "invis", "bomb", "gun"

@@ -1,8 +1,8 @@
 import * as socketIo from "socket.io";
 import Player from "./common/Player";
-import Tile from "./common/Tile";
-import Bullet from "./common/Bullet";
-import Bomb from "./common/Bomb";
+import Tile from "./Tile";
+import Bullet from "./Bullet";
+import Bomb from "./Bomb";
 import QuadTree from "./QuadTree";
 
 const TICKRATE: number = 60;
@@ -81,36 +81,6 @@ class Engine {
             this.spawnTile();
         }
 
-        // send initial positions to clients
-        /*let positions: any[] = []
-        for (let pid in this.players) {
-            let player: Player = this.players[pid];
-
-            let pObj: {id: string, xPos: number, yPos: number, type: string, fillColor: string, outlineColor: string} = {
-                id: player.getId(),
-                xPos: player.getX(),
-                yPos: player.getY(),
-                type: player.getObjType(),
-                fillColor: player.getColor(),
-                outlineColor: player.getOutlineColor()
-            };
-
-            positions.push(pObj);
-        }
-
-        for (let tid in this.tiles) {
-            let tile: Tile = this.tiles[tid];
-
-            let tObj: {id: string, xPos: number, yPos: number, type: string} = {
-                id: tile.getId(),
-                xPos: tile.getX(),
-                yPos: tile.getY(),
-                type: tile.getObjType()
-            }
-
-            positions.push(tObj);
-        }*/
-
         this.sendPlayerState();
         this.sendTileState();
     }
@@ -174,29 +144,6 @@ class Engine {
 
         return dimensions;
     }
-
-    /*
-    // add a new player
-    public addPlayer(id: string) {
-        console.log("Engine: added " + id);
-        let player = new Player(id);
-        this.players[id] = player;
-
-        // default settings, will update later
-        this.players[id].setX(100);
-        this.players[id].setY(100);
-
-        this.tree.insert(player);
-
-        this.pendingMoves[id] = [];
-    }
-
-    // remove an existing player
-    public removePlayer(id: string) {
-        delete this.players[id];
-
-        this.socket.emit("removePlayer", id);
-    }*/
 
     private initializePlayers() {
         // calculate perimeter - maybe like 75 units or so in
@@ -477,28 +424,6 @@ class Engine {
                 }
             }
         }
-
-        /*
-        // can probably just do the first set of comparisons as the roles will
-        // be switched in a different comparison (if p1 can touch p2 then p2 can
-        // touch p1)
-        if (player2.isInvincible()) {
-            if (!player1.isInvincible()) {
-                player1.die("you touched an invincible player");
-                player2.incrementKills();
-                this.numAlive--;
-            }
-        }
-
-        if (player2.isFire()) {
-            if (!player1.isInvincible()) {
-                if (!player1.isFire()) {
-                    player1.die("someone lit you on fire");
-                    player2.incrementKills();
-                    this.numAlive--;
-                }
-            }
-        }*/
     }
 
     private bulletCollision(pid: string, bid: string) {
@@ -560,8 +485,6 @@ class Engine {
         player.addItem(tile.getType());
 
         delete this.tiles[tid];
-
-        //this.removeTile(tid);
     }
 
     private sendPlayerDeaths() {
@@ -575,8 +498,6 @@ class Engine {
 
             if (!player.isAlive()) {
                 if (player.isRecentDead()) {
-                    //this.playerDeaths.push({id: pid, reason: player.getDeathReason()});
-
                     player.resetRecentDead();
                 }
                 else {
@@ -588,9 +509,6 @@ class Engine {
 
             this.updatePlayers.push({id: pid, width: player.getWidth(), x: player.getX(), y: player.getY(), powerups: player.getPowerups(), debuffs: player.getDebuffs(), outlineColor: player.getOutlineColor(), fillColor: player.getColor()});
         }
-
-        //this.sendPlayerDeaths();
-
         // send new server state
         this.socket.to(this.roomId).emit("playerState", this.updatePlayers);
         this.updatePlayers = [];

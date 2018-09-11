@@ -105,42 +105,11 @@ let startGame = function() {
 }
 startGameButton.addEventListener("click", startGame);
 
-socket.on("curPlayers", function(data) {
-    client.setPlayers(data);
-});
-
-socket.on("curTiles", function(data) {
-    client.setTiles(data);
-});
-
 socket.on("boardDimensions", function(dimensions) {
     element("client_canvas").width = dimensions.width;
     element("client_canvas").height = dimensions.height;
 });
 
-socket.on("removePlayer", function(id) {
-    client.removePlayer(id);
-});
-
-socket.on("newTile", function(data) {
-    //client.addTile(data);
-});
-
-socket.on("removeTile", function(id) {
-    //client.removeTile(id);
-});
-
-socket.on("death", function(data) {
-    for (let i = 0; i < data.length; i++) {
-        client.addServerPlayerDeath(data[i]);
-    }
-});
-
-socket.on("projectileDeath", function(data) {
-    for (let i = 0; i < data.length; i++) {
-        client.addServerProjectileDeath(data[i]);
-    }
-});
 socket.on("selfPlayerState", function(data) {
     client.addSelfUpdate(data);
 });
