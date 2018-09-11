@@ -97,7 +97,7 @@ class Engine {
     public shutdown() {
         clearInterval(this.updateInterval);
     }
-    
+
     private endGame() {
         clearInterval(this.updateInterval);
 
@@ -205,8 +205,8 @@ class Engine {
 
     private spawnTile() {
         let tileInset: number =  4 * INSET;
-        let xBound: number = this.width - tileInset;
-        let yBound: number = this.height - tileInset;
+        let xBound: number = this.width - (2 * tileInset);
+        let yBound: number = this.height - (2 * tileInset);
         let x: number = Math.floor(Math.random() * xBound) + tileInset;
         let y: number = Math.floor(Math.random() * yBound) + tileInset;
 

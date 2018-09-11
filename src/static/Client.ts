@@ -29,6 +29,10 @@ class Client {
 
         this.playerId = this.socket.id;
 
+        this.serverPlayerMessages = [];
+        this.serverProjectileMessages = [];
+        this.serverTileMessages = [];
+
         this.canvas = canvas;
         this.room = room;
         this.item = item;
@@ -68,10 +72,6 @@ class Client {
         this.movement["left"] = false;
 
         this.savedMoves = [];
-
-        this.serverPlayerMessages = [];
-        this.serverProjectileMessages = [];
-        this.serverTileMessages = [];
 
         this.setUpdateInterval();
     }
@@ -139,6 +139,10 @@ class Client {
 
     private reset() {
         clearInterval(this.updateInterval);
+
+        this.serverPlayerMessages = [];
+        this.serverProjectileMessages = [];
+        this.serverTileMessages = [];
 
         this.room.innerHTML = "Not in room";
         this.item.innerHTML = "";

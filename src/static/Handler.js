@@ -36,6 +36,17 @@ let mouseHandler = function (e) {
     client.shot(x, y);
 }
 //document.body.onmousedown = mouseHandler;
+let toggleRoomsButton = element("toggleRooms");
+let toggleRooms = function() {
+    let ele = element("roomControls");
+    if (ele.style.display === "none") {
+        ele.style.display = "block";
+    }
+    else {
+        ele.style.display = "none";
+    }
+};
+toggleRoomsButton.addEventListener("click", toggleRooms);
 
 let createRoomButton = element("createRoom");
 let createRoom = function() {
@@ -55,7 +66,7 @@ let createRoom = function() {
     }
 
     client.createRoom(roomId, roomNumUsers);
-}
+};
 createRoomButton.addEventListener("click", createRoom);
 
 socket.on("currentRooms", function(rooms) {
@@ -93,19 +104,19 @@ let joinRoom = function() {
     }
 
     client.joinRoom(roomId);
-}
+};
 joinRoomButton.addEventListener("click", joinRoom);
 
 let leaveRoomButton = element("leaveRoom");
 let leaveRoom = function() {
     client.leaveRoom();
-}
+};
 leaveRoomButton.addEventListener("click", leaveRoom);
 
 let startGameButton = element("startGame");
 let startGame = function() {
     client.signalStartGame();
-}
+};
 startGameButton.addEventListener("click", startGame);
 
 socket.on("boardDimensions", function(dimensions) {
@@ -118,7 +129,6 @@ socket.on("selfPlayerState", function(data) {
 });
 
 socket.on("playerState", function(data) {
-    console.log(data);
     client.addServerPlayerPosition(data);
 });
 
