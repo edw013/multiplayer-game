@@ -1,4 +1,5 @@
 import Player from "../common/Player";
+import { Input, Movement, SelfPlayerState, PlayerState, ProjectileState, TileState, ShotState } from "../common/Utilities";
 
 const TICKRATE: number = 60;
 
@@ -6,25 +7,25 @@ class Client {
     private roomId: string;
     private player: Player;
     private playerId: string;
-    private updateInterval;
-    private socket;
-    private lastTS;
-    private movement: {};
-    private savedMoves: any[];
-    private selfUpdate: any;
-    private serverPlayerMessages: any[];
-    private serverProjectileMessages: any[];
-    private serverTileMessages: any[];
-    private canvas;
-    private room;
-    private item;
-    private powerup;
-    private weapon;
-    private ammo;
-    private debuff;
-    private deathMessage;
+    private updateInterval: NodeJS.Timer;
+    private socket: SocketIOClient.Socket;
+    private lastTS: number;
+    private movement: Movement;
+    private savedMoves: Input[];
+    private selfUpdate: SelfPlayerState;
+    private serverPlayerMessages: PlayerState[];
+    private serverProjectileMessages: ProjectileState[];
+    private serverTileMessages: TileState[];
+    private canvas: HTMLCanvasElement;
+    private room: HTMLElement;
+    private item: HTMLElement;
+    private powerup: HTMLElement;
+    private weapon: HTMLElement;
+    private ammo: HTMLElement;
+    private debuff: HTMLElement;
+    private deathMessage: HTMLElement;
     
-    public constructor(socket, canvas, room, item, powerup, weapon, ammo, debuff, deathMessage) {
+    public constructor(socket: SocketIOClient.Socket, canvas: HTMLCanvasElement, room: HTMLElement, item: HTMLElement, powerup: HTMLElement, weapon: HTMLElement, ammo: HTMLElement, debuff: HTMLElement, deathMessage: HTMLElement) {
         this.socket = socket;
 
         this.playerId = this.socket.id;
@@ -56,11 +57,11 @@ class Client {
         this.repaint();
         this.canvas.getContext("2d").save();
 
-        let countdown = 3;
+        let countdown: number = 3;
         this.paintCountdown(countdown);
         countdown--;
         // countdown??
-        let countdownTimer = setInterval(() => {
+        let countdownTimer: NodeJS.Timer = setInterval(() => {
             this.paintCountdown(countdown);
             countdown--;
         }, 1000 * 1);
@@ -73,19 +74,15 @@ class Client {
 
     private paintCountdown(countdown: number) {
         this.repaint();
-        let ctx = this.canvas.getContext("2d");
+        let ctx: CanvasRenderingContext2D = this.canvas.getContext("2d");
         ctx.font = "30px Arial";
-        ctx.fillText(countdown, this.canvas.width / 2, this.canvas.height / 2);
+        ctx.fillText(countdown.toString(), this.canvas.width / 2, this.canvas.height / 2);
     }
 
     public startGame() {
         this.lastTS = Date.now();
 
-        this.movement = {};
-        this.movement["up"] = false;
-        this.movement["down"] = false;
-        this.movement["right"] = false;
-        this.movement["left"] = false;
+        this.movement = new Movement();
 
         this.savedMoves = [];
 
@@ -102,7 +99,7 @@ class Client {
         }, 1000.0 / TICKRATE);
     }
 
-    public addSelfUpdate(data) {
+    public addSelfUpdate(data: SelfPlayerState) {
         this.selfUpdate = data;
     }
 
@@ -172,27 +169,27 @@ class Client {
         this.socket.emit("startGame", this.roomId);
     }
 
-    public addServerPlayerPosition(data) {
+    public addServerPlayerPosition(data: PlayerState[]) {
         this.serverPlayerMessages = data;
     }
     
-    public addServerProjectilePosition(data) {
+    public addServerProjectilePosition(data: ProjectileState[]) {
         this.serverProjectileMessages = data;
     }
 
-    public addServerTilePosition(data) {
+    public addServerTilePosition(data: TileState[]) {
         this.serverTileMessages = data;
     }
 
     private updatePlayerPositions() {
-        let now = Date.now();
-        let lastTS = this.lastTS;
-        let pressTime = (now - lastTS) / 1000.0;
+        let now: number = Date.now();
+        let lastTS: number = this.lastTS;
+        let pressTime: number = (now - lastTS) / 1000.0;
         this.lastTS = now;
 
-        let input;
-        if (this.movement["up"] || this.movement["down"] || this.movement["left"] || this.movement["right"]) {
-            input = {room: this.roomId, id: this.playerId, pressTime: pressTime, movement: this.movement, ts: now};
+        let input: Input;
+        if (this.movement.up || this.movement.down || this.movement.left || this.movement.right) {
+            input = new Input(this.roomId, this.playerId, pressTime, this.movement, now);
         }
         else {
             return;
@@ -252,19 +249,20 @@ class Client {
             return;
         }
 
-        this.socket.emit("shoot", {room: this.roomId, id: this.playerId, x: x, y: y});
+        let shot: ShotState = new ShotState(this.roomId, this.playerId, x, y);
+        this.socket.emit("shoot", shot);
     }
 
     private setWeaponMessage() {
         let weapon = this.player.getWeapon();
 
-        if (weapon == "gun") {
+        if (weapon === "gun") {
             this.weapon.innerHTML = "Gun";
-        } else if (weapon == "bomb") {
+        } else if (weapon === "bomb") {
             this.weapon.innerHTML = "Grenade Launcher";
         }
 
-        this.ammo.innerHTML = this.player.getAmmo();
+        this.ammo.innerHTML = this.player.getAmmo().toString();
     }
 
     private setPowerupMessage() {
@@ -299,7 +297,7 @@ class Client {
     }
 
     private repaint() {
-        let ctx = this.canvas.getContext("2d");
+        let ctx: CanvasRenderingContext2D = this.canvas.getContext("2d");
         ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
         if (this.player.isAlive()) {

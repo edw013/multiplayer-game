@@ -3,7 +3,7 @@
         "outDir": "./build/",
         "module": "commonjs",
         "target": "es5",
-        "lib": ["es6"],
+        "lib": ["es6", "dom"],
         "allowJs": true
     },
     "include": [

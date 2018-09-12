@@ -1,20 +1,20 @@
-import GameObject from "./GameObject";
+import GameObject from "../GameObject";
+import { Input, Buffs, Debuffs } from "./Utilities";
 
 class Player extends GameObject {
     private score: number;
     private moveSpeed: number;
     private alive: boolean;
     private recentDead: boolean;
-    private lastTS: any;
+    private lastTS: number;
     private item: string;
     private itemType: string;
     private weapon: string;
     private ammo: number;
     private powerup: string;
-    private powerupBuffs: any;
-    private buffTimer: any;
-    private debuffs: any;
-    private debuffTimer: any;
+    private powerupBuffs: Buffs;
+    private buffTimer: NodeJS.Timer;
+    private debuffs: Debuffs;
     private deathReason: string;
 
     public constructor(id: string) {
@@ -34,14 +34,9 @@ class Player extends GameObject {
 
         this.ammo = 0;
 
-        this.powerupBuffs = {};
-        this.powerupBuffs.invincible = false;
-        this.powerupBuffs.invisible = false;
-        this.powerupBuffs.ms = false;
+        this.powerupBuffs = new Buffs();
 
-        this.debuffs = {};
-        this.debuffs.fire = false;
-        this.debuffs.trapped = false;
+        this.debuffs = new Debuffs();
     }
 
     public isAlive(): boolean {
@@ -63,15 +58,15 @@ class Player extends GameObject {
         this.deathReason = reason;
     }
 
-    public getDeathReason() {
+    public getDeathReason(): string {
         return this.deathReason;
     }
 
-    public getLastTS(): any {
+    public getLastTS(): number {
         return this.lastTS;
     }
 
-    public setLastTS(ts: any) {
+    public setLastTS(ts: number) {
         this.lastTS = ts;
     }
 
@@ -87,7 +82,7 @@ class Player extends GameObject {
         return this.score;
     }
 
-    public applyInput(input: any) {
+    public applyInput(input: Input) {
         if (input.movement.up) {
             this.yPos -= input.pressTime * this.moveSpeed;
         }
@@ -103,29 +98,27 @@ class Player extends GameObject {
     }
 
     public hasItem(): boolean {
-        return !(this.item == null);
+        return !(this.item === null);
     }
 
     public addItem(type: string) {
         // bad ones are instant use, others are stored
-        if (type == "fall") {
+        if (type === "fall") {
             this.die("you fell to your death");
         }
-        else if (type == "trap") {
+        else if (type === "trap") {
             if (this.powerupBuffs.ms) {
                 this.removePowerup();
             }
             this.moveSpeed = 0;
             this.debuffs.trapped = true;
 
-            this.debuffTimer = setTimeout((function(self) {
-                return function() {
-                    self.debuffs.trapped = false;
-                    self.moveSpeed = 200;
-                };
-            })(this), 1000 * 10);
+            setTimeout(() => {
+                this.debuffs.trapped = false;
+                this.moveSpeed = 200;
+            }, 1000 * 10);
         }
-        else if (type == "fire") {
+        else if (type === "fire") {
             if (this.powerup) {
                 this.removePowerup();
             }
@@ -134,16 +127,14 @@ class Player extends GameObject {
 
             this.debuffs.fire = true;
 
-            this.debuffTimer = setTimeout((function(self) {
-                return function() {
-                    self.die("you burned to death");
-                };
-            })(this), 1000 * 5);
+            setTimeout(() => {
+                this.die("you burned to death");
+            }, 1000 * 5);
         }
         else {
             this.item = type;
 
-            if (type == "invis" || type == "star" || type == "ms") {
+            if (type === "invis" || type === "star" || type === "ms") {
                 this.itemType = "powerup";
             }
             else {
@@ -157,11 +148,11 @@ class Player extends GameObject {
     }
 
     public useItem(): string {
-        if (this.item == "none") {
+        if (this.item === "none") {
             return;
         }
 
-        if (this.itemType == "powerup") {
+        if (this.itemType === "powerup") {
             this.applyPowerup();
         }
         else {
@@ -173,19 +164,19 @@ class Player extends GameObject {
         return this.powerup;
     }
 
-    public getPowerups(): any {
+    public getPowerups(): Buffs {
         return this.powerupBuffs;
     }
 
-    public setPowerups(powerups: any) {
+    public setPowerups(powerups: Buffs) {
         this.powerupBuffs = powerups;
     }
 
-    public getDebuffs(): any {
+    public getDebuffs(): Debuffs {
         return this.debuffs;
     }
 
-    public setDebuffs(debuffs: any) {
+    public setDebuffs(debuffs: Debuffs) {
         this.debuffs = debuffs;
     }
 
@@ -203,11 +194,9 @@ class Player extends GameObject {
         this.itemType = null;
 
         // start timer
-        this.buffTimer = setTimeout((function(self) {
-            return function() {
-                self.removePowerup();
-            };
-        })(this), 1000 * 15);
+        this.buffTimer = setTimeout(() => {
+            this.removePowerup();
+        }, 1000 * 15);
     }
 
     public removePowerup() {
@@ -228,10 +217,10 @@ class Player extends GameObject {
         this.item = "none";
         this.itemType = null;
 
-        if (this.weapon == "gun") {
+        if (this.weapon === "gun") {
             this.ammo = 2;
         }
-        else if (this.weapon == "bomb") {
+        else if (this.weapon === "bomb") {
             this.ammo = 1;
         }
     }

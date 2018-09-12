@@ -1,52 +1,62 @@
 import * as socketIo from "socket.io";
+import GameObject from "./GameObject";
 import Player from "./common/Player";
+import { Input, SelfPlayerState, PlayerState, ProjectileState, TileState, ShotState } from "./common/Utilities";
 import Tile from "./Tile";
 import Bullet from "./Bullet";
 import Bomb from "./Bomb";
-import QuadTree from "./QuadTree";
+import { QuadTree, Bounds } from "./QuadTree";
 
 const TICKRATE: number = 60;
 const INSET: number = 75;
 
+class Dimensions {
+    public width: number;
+    public height: number;
+
+    public constructor(width: number, height: number) {
+        this.width = width;
+        this.height = height;
+    }
+}
+
 class Engine {
     private roomId: string;
-    private width: number;
-    private height: number;
-    private players: {};
+    private dimensions: Dimensions;
+    private players: Map<string, Player>;
     private numPlayers: number;
     private numAlive: number;
-    private tiles: {};
-    private projectiles: {};
-    private pendingMoves: {};
-    private updateInterval: any;
-    private updatePlayers: any[];
-    private updateProjectiles: any[];
-    private updateTiles: any[];
+    private tiles: Map<string, Tile>;
+    private projectiles: Map<string, GameObject>;
+    private pendingMoves: Map<string, Input[]>;
+    private updateInterval: NodeJS.Timer;
+    private updatePlayers: PlayerState[];
+    private updateProjectiles: ProjectileState[];
+    private updateTiles: TileState[];
     private socket: socketIo.Server;
     private updateRate: number;
     private tree: QuadTree;
     private tileCounter: number;
     private projectileCounter: number;
     private itemQueue: string[];
-    private shotQueue: any[];
+    private shotQueue: ShotState[];
 
     public constructor(roomId: string, players: Set<string>, socket: socketIo.Server) {
         this.roomId = roomId;
-        this.width = 500;
-        this.height = 500;
-        this.players = {};
+        this.dimensions = new Dimensions(500, 500);
+        this.players = new Map<string, Player>();
         this.numPlayers = players.size;
         this.numAlive = players.size;
-        this.tiles = {};
-        this.projectiles = {};
-        this.pendingMoves = {};
+        this.tiles = new Map<string, Tile>();
+        this.projectiles = new Map<string, GameObject>();
+        this.pendingMoves = new Map<string, Input[]>();
         this.updatePlayers = [];
         this.updateProjectiles = [];
         this.updateTiles = [];
         this.socket = socket;
         this.updateRate = TICKRATE;
 
-        this.tree = new QuadTree({x: 0, y: 0, width: this.width, height: this.height}, 4, 10);
+        this.tree = new QuadTree(new Bounds(0, 0, this.dimensions.width, this.dimensions.height), 4, 10);
 
         this.tileCounter = 0;
         this.projectileCounter = 0;
@@ -133,19 +143,14 @@ class Engine {
         return id;
     }
 
-    private getDimensions(): {width: number, height: number} {
-        let dimensions: {width: number, height: number} = {
-            width: this.width,
-            height: this.height
-        };
-
-        return dimensions;
+    private getDimensions(): Dimensions {
+        return this.dimensions;
     }
 
     private initializePlayers() {
         // calculate perimeter - maybe like 75 units or so in
-        let startPosWidth: number = this.width - (2 * INSET);
-        let startPosHeight: number = this.height - (2 * INSET);
+        let startPosWidth: number = this.dimensions.width - (2 * INSET);
+        let startPosHeight: number = this.dimensions.height - (2 * INSET);
 
         let perimeter: number = (2 * startPosWidth) + (2 * startPosHeight);
         let increment: number = Math.floor(perimeter / this.numPlayers);
@@ -202,8 +207,8 @@ class Engine {
 
     private spawnTile() {
         let tileInset: number =  4 * INSET;
-        let xBound: number = this.width - (2 * tileInset);
-        let yBound: number = this.height - (2 * tileInset);
+        let xBound: number = this.dimensions.width - (2 * tileInset);
+        let yBound: number = this.dimensions.height - (2 * tileInset);
         let x: number = Math.floor(Math.random() * xBound) + tileInset;
         let y: number = Math.floor(Math.random() * yBound) + tileInset;
 
@@ -220,8 +225,8 @@ class Engine {
     }
 
     // add a move to process
-    public addMove(input: any) {
-        let id = input.id;
+    public addMove(input: Input) {
+        let id: string = input.id;
 
         // i don't think this should be possible but heroku complained so
         if(!this.pendingMoves[id]) {
@@ -273,9 +278,9 @@ class Engine {
                 this.pendingMoves[pid] = [];
             }
             
-            let moves = this.pendingMoves[pid];
+            let moves: Input[] = this.pendingMoves[pid];
             while(moves.length > 0) {
-                let move = moves.shift();
+                let move: Input = moves.shift();
 
                 player.applyInput(move);
 
@@ -292,14 +297,14 @@ class Engine {
 
         for (let key in this.projectiles) {
             let projectile = this.projectiles[key];
-            let type = projectile.getObjType();
+            let type: string = projectile.getObjType();
 
-            if (type == "bullet") {
+            if (type === "bullet") {
                 let bullet = <Bullet> projectile;
 
                 bullet.updatePosition(1 / 60);
 
-                if (bullet.getX() < 0 || bullet.getX() > this.width || bullet.getY() < 0 || bullet.getY() > this.height) {
+                if (bullet.getX() < 0 || bullet.getX() > this.dimensions.width || bullet.getY() < 0 || bullet.getY() > this.dimensions.height) {
                     bullet.destroy();
 
                     continue;
@@ -307,7 +312,7 @@ class Engine {
 
                 this.tree.insert(bullet);
             }
-            else if (type == "bomb") {
+            else if (type === "bomb") {
                 let bomb = <Bomb> projectile;
 
                 if (bomb.isExploded()) {
@@ -325,21 +330,21 @@ class Engine {
                 continue;
             }
 
-            let possibleCollisions = this.tree.get(player);
+            let possibleCollisions: GameObject[] = this.tree.get(player);
 
-            for (let i = 0; i < possibleCollisions.length; i++) {
-                let obj = possibleCollisions[i];
+            for (let i: number = 0; i < possibleCollisions.length; i++) {
+                let obj: GameObject = possibleCollisions[i];
 
-                let targetX = obj.getX();
-                let targetY = obj.getY();
-                let targetWidth = obj.getWidth();
-                let targetHeight = obj.getHeight();
+                let targetX: number = obj.getX();
+                let targetY: number = obj.getY();
+                let targetWidth: number = obj.getWidth();
+                let targetHeight: number = obj.getHeight();
 
                 let type = obj.getObjType();
 
                 // player object is collision between 2 circles
-                if (type == "player") {
-                    if (obj.getId() == pid) {
+                if (type === "player") {
+                    if (obj.getId() === pid) {
                         continue;
                     }
 
@@ -349,20 +354,20 @@ class Engine {
                         this.playerCollision(player.getId(), obj.getId());
                     }
                 }
-                if (type == "bullet" || type == "bomb") {
+                if (type === "bullet" || type === "bomb") {
                     let dist = Math.sqrt(Math.pow(player.getX() - targetX, 2) + Math.pow(player.getY() - targetY, 2));
 
                     if (dist <= player.getWidth() / 2 + targetWidth / 2) {
-                        if (type == "bullet") {
+                        if (type === "bullet") {
                             this.bulletCollision(player.getId(), obj.getId());
                         }
-                        else if (type == "bomb") {
+                        else if (type === "bomb") {
                             this.bombCollision(player.getId(), obj.getId());
                         }
                     }
                 }
                 // tile object is collision between a circle and a rectangle
-                else if (type == "tile") {
+                else if (type === "tile") {
                     let tile: Tile = <Tile> obj;
 
                     // x and y are always in the center
@@ -480,9 +485,11 @@ class Engine {
                 }
             }
 
-            this.socket.to(pid).emit("selfPlayerState", {ts: player.getLastTS(), alive: player.isAlive(), score: player.getScore(), deathMessage: player.getDeathReason(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY(), outlineColor: player.getOutlineColor(), fillColor: player.getColor(), width: player.getWidth()});
+            let selfPlayerState: SelfPlayerState = new SelfPlayerState(player.getWidth(), player.getX(), player.getY(), player.getLastTS(), player.isAlive(), player.getScore(), player.getDeathReason(), player.getItem(), player.getPowerups(), player.getDebuffs(), player.getWeapon(), player.getAmmo(), player.getOutlineColor(), player.getColor());
+            this.socket.to(pid).emit("selfPlayerState", selfPlayerState);
 
-            this.updatePlayers.push({id: pid, width: player.getWidth(), x: player.getX(), y: player.getY(), powerups: player.getPowerups(), debuffs: player.getDebuffs(), outlineColor: player.getOutlineColor(), fillColor: player.getColor()});
+            let playerState: PlayerState = new PlayerState(pid, player.getWidth(), player.getX(), player.getY(), player.getPowerups(), player.getDebuffs(), player.getOutlineColor(), player.getColor());
+            this.updatePlayers.push(playerState);
         }
         // send new server state
         this.socket.to(this.roomId).emit("playerState", this.updatePlayers);
@@ -499,7 +506,8 @@ class Engine {
                 continue;
             }
 
-            this.updateProjectiles.push({x: projectile.getX(), y: projectile.getY(), outlineColor: projectile.getOutlineColor(), fillColor: projectile.getColor(), width: projectile.getWidth()});
+            let projState: ProjectileState = new ProjectileState(projectile.getWidth(), projectile.getX(), projectile.getY(), projectile.getOutlineColor(), projectile.getColor());
+            this.updateProjectiles.push(projState);
         }
 
         this.socket.to(this.roomId).emit("projectileState", this.updateProjectiles);
@@ -510,7 +518,8 @@ class Engine {
         for (let id in this.tiles) {
             let tile: Tile = this.tiles[id];
 
-            this.updateTiles.push({x: tile.getX(), y: tile.getY()})
+            let tileState: TileState = new TileState(tile.getX(), tile.getY());
+            this.updateTiles.push(tileState)
         }
 
         this.socket.to(this.roomId).emit("tileState", this.updateTiles);
@@ -533,7 +542,7 @@ class Engine {
 
     private processItemUses() {
         while (this.itemQueue.length > 0) {
-            let id = this.itemQueue.shift();
+            let id: string = this.itemQueue.shift();
             let player: Player = this.players[id];
 
             if (!player) {
@@ -544,13 +553,13 @@ class Engine {
         }
     }
 
-    public registerShot(data: any) {
+    public registerShot(data: ShotState) {
         this.shotQueue.push(data);
     }
 
     private processShots() {
         while (this.shotQueue.length > 0) {
-            let data = this.shotQueue.shift();
+            let data: ShotState = this.shotQueue.shift();
             let id = data.id;
             let targetX = data.x;
             let targetY = data.y;
@@ -561,7 +570,7 @@ class Engine {
                 continue;
             }
 
-            if (player.getAmmo() == 0) {
+            if (player.getAmmo() === 0) {
                 continue;
             }
 
@@ -574,10 +583,10 @@ class Engine {
                 continue;
             }
 
-            if (weaponType == "gun") {
+            if (weaponType === "gun") {
                 this.createBullet(id, targetX, targetY);
             }
-            else if (weaponType == "bomb") {
+            else if (weaponType === "bomb") {
                 this.createBomb(id, targetX, targetY);
             }
         }
@@ -600,7 +609,7 @@ class Engine {
         let deltaX = targetX - initX;
         let deltaY = targetY - initY;
 
-        let id = this.projectileCounter.toString();
+        let id: string = this.projectileCounter.toString();
         this.projectileCounter++;
         let bullet = new Bullet(id, pid, initX, initY, deltaX, deltaY);
 
@@ -620,7 +629,7 @@ class Engine {
             return;
         }
 
-        let id = this.projectileCounter.toString();
+        let id: string = this.projectileCounter.toString();
         this.projectileCounter++;
         let bomb = new Bomb(id, pid, targetX, targetY);
 
