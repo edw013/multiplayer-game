@@ -54,12 +54,28 @@ class Client {
         this.player.setWidth(message.width);
 
         this.repaint();
+        this.canvas.getContext("2d").save();
+
+        let countdown = 3;
+        this.paintCountdown(countdown);
+        countdown--;
         // countdown??
-        setTimeout((function(self) {
-            return function() {
-                console.log("starting"); 
-            };
-        })(this), 1000 * 3);
+        let countdownTimer = setInterval(() => {
+            this.paintCountdown(countdown);
+            countdown--;
+        }, 1000 * 1);
+
+        setTimeout(() => {
+            clearInterval(countdownTimer);
+            this.canvas.getContext("2d").restore();
+        }, 1000 * 3);
+    }
+
+    private paintCountdown(countdown: number) {
+        this.repaint();
+        let ctx = this.canvas.getContext("2d");
+        ctx.font = "30px Arial";
+        ctx.fillText(countdown, this.canvas.width / 2, this.canvas.height / 2);
     }
 
     public startGame() {
