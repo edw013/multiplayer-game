@@ -77,8 +77,8 @@ socket.on("currentRooms", function(rooms) {
     for (let i = 0; i < rooms.length; i++) {
         let room = rooms[i];
         let opt = document.createElement("option")
-        opt.text = room;
-        opt.value = room;
+        opt.text = room.id + " " + room.cur + "/" + room.size;
+        opt.value = room.id;
 
         curRooms.appendChild(opt);
     }

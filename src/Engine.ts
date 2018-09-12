@@ -118,14 +118,14 @@ class Engine {
             }
         }
         
-        let mostKills: number = 0;
+        let highScore: number = 0;
         let id: string = null;
 
         for (let pid in this.players) {
             let player: Player = this.players[pid];
 
-            if (player.getNumKills() > mostKills) {
-                mostKills = player.getNumKills();
+            if (player.getScore() > highScore) {
+                highScore = player.getScore();
                 id = player.getId();
             }
         }
@@ -390,7 +390,7 @@ class Engine {
         if (player1.isInvincible()) {
             if (!player2.isInvincible()) {
                 player2.die("you touched an invincible player");
-                player1.incrementKills();
+                player1.incrementScore();
                 this.numAlive--;
             }
         }
@@ -399,7 +399,7 @@ class Engine {
             if (!player2.isInvincible()) {
                 if (!player2.isFire()) {
                     player2.die("someone lit you on fire!");
-                    player1.incrementKills();
+                    player1.incrementScore();
                     this.numAlive--;
                 }
             }
@@ -419,7 +419,7 @@ class Engine {
             player.die("you were hit by a bullet");
 
             let playerKiller = this.players[bullet.getParentId()];
-            playerKiller.incrementKills();
+            playerKiller.incrementScore();
 
             this.numAlive--;
         }
@@ -440,7 +440,7 @@ class Engine {
             player.die("you were blown up");
 
             let playerKiller = this.players[bomb.getParentId()];
-            playerKiller.incrementKills();
+            playerKiller.incrementScore();
 
             this.numAlive--;
         }
@@ -480,7 +480,7 @@ class Engine {
                 }
             }
 
-            this.socket.to(pid).emit("selfPlayerState", {ts: player.getLastTS(), alive: player.isAlive(), deathMessage: player.getDeathReason(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY(), outlineColor: player.getOutlineColor(), fillColor: player.getColor(), width: player.getWidth()});
+            this.socket.to(pid).emit("selfPlayerState", {ts: player.getLastTS(), alive: player.isAlive(), score: player.getScore(), deathMessage: player.getDeathReason(), item: player.getItem(), powerups: player.getPowerups(), weapon: player.getWeapon(), ammo: player.getAmmo(), debuffs: player.getDebuffs(), x: player.getX(), y: player.getY(), outlineColor: player.getOutlineColor(), fillColor: player.getColor(), width: player.getWidth()});
 
             this.updatePlayers.push({id: pid, width: player.getWidth(), x: player.getX(), y: player.getY(), powerups: player.getPowerups(), debuffs: player.getDebuffs(), outlineColor: player.getOutlineColor(), fillColor: player.getColor()});
         }

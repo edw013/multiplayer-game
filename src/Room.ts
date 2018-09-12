@@ -77,7 +77,9 @@ class Room {
     }
 
     public delete() {
-        this.engine.shutdown();
+        if (this.engine !== undefined) {
+            this.engine.shutdown();
+        }
     }
 
     public addMove(move) {
@@ -90,6 +92,18 @@ class Room {
 
     public addShoot(data) {
         this.engine.registerShot(data);
+    }
+
+    public getRoomSize(): number {
+        return this.roomSize;
+    }
+
+    public getNumPlayers(): number {
+        return this.numPlayers;
+    }
+
+    public isStarted(): boolean {
+        return this.started;
     }
 }
 

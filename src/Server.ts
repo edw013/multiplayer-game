@@ -25,10 +25,16 @@ server.listen(port, function(){
 let rooms = {};
 
 let getCurRooms = function() {
-    let curRooms = [];
-    for (let room in rooms) {
-        if (rooms.hasOwnProperty(room)) {
-            curRooms.push(room);
+    let curRooms: {id: string, cur: number, size: number}[] = [];
+    for (let id in rooms) {
+        if (rooms.hasOwnProperty(id)) {
+            let room: Room = rooms[id];
+            if (room.isStarted()) {
+                continue;
+            }
+            let size: number = room.getRoomSize();
+            let numPlayers: number = room.getNumPlayers();
+            curRooms.push({id: id, cur: numPlayers, size: size});
         }
     }
 
@@ -95,7 +101,7 @@ io.on("connection", function(socket) {
 
         io.emit("currentRooms", getCurRooms());
 
-        console.log("created room " + roomId);
+        console.log("created room " + roomId + " with owner " + socket.id);
 
         socket.join(roomId);
         socket.room = roomId;
@@ -123,6 +129,8 @@ io.on("connection", function(socket) {
 
         if (joinSuccess) {
             socket.join(roomId);
+
+            io.emit("currentRooms", getCurRooms());
         }
 
         callback(joinSuccess);
@@ -153,6 +161,8 @@ io.on("connection", function(socket) {
         socket.leave(socket.room);
         socket.room = null;
 
+        io.emit("currentRooms", getCurRooms());
+
         callback(true);
     });
 
@@ -168,6 +178,8 @@ io.on("connection", function(socket) {
         }
 
         room.start(socket.id);
+
+        io.emit("currentRooms", getCurRooms());
     });
 
     socket.on("move", function(data) {

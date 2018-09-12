@@ -1,7 +1,7 @@
 import GameObject from "./GameObject";
 
 class Player extends GameObject {
-    private numKills: number;
+    private score: number;
     private moveSpeed: number;
     private alive: boolean;
     private recentDead: boolean;
@@ -20,7 +20,7 @@ class Player extends GameObject {
     public constructor(id: string) {
         super(id);
         this.objType = "player";
-        this.numKills = 0;
+        this.score = 0;
         this.moveSpeed = 200;
         this.color = this.getRandomColor();
         this.outlineColor = this.getRandomColor();
@@ -75,16 +75,16 @@ class Player extends GameObject {
         this.lastTS = ts;
     }
 
-    public incrementKills() {
-        this.numKills++;
+    public incrementScore() {
+        this.score++;
     }
 
-    public setNumKills(kills: number) {
-        this.numKills = kills;
+    public setScore(score: number) {
+        this.score = score;
     }
     
-    public getNumKills(): number {
-        return this.numKills;
+    public getScore(): number {
+        return this.score;
     }
 
     public applyInput(input: any) {
