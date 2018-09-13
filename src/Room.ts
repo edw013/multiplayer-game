@@ -42,19 +42,30 @@ class Room {
         return true;
     }
 
-    public removePlayer(id: string): string {
+    public removePlayer(id: string): boolean {
         this.players.delete(id);
         this.numPlayers--;
 
         this.ready = false;
 
-        if (this.numPlayers > 0) {
-            this.roomOwner = this.players.values().next().value;
+        if (id === this.roomOwner) {
+            if (this.numPlayers > 0) {
+                this.roomOwner = this.players.values().next().value;
+
+                console.log("transferring ownership of room " + this.id + " to " + this.roomOwner);
+                this.socket.to(this.roomOwner).emit("newOwner");
+
+                return false;
+            }
+            else {
+                this.roomOwner = null;
+
+                return true;
+            }
         }
-        else {
-            this.roomOwner = null;
-        }
-        
+    }
+
+    public getRoomOwner(): string {
         return this.roomOwner;
     }
 

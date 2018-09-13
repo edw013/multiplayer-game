@@ -108,8 +108,8 @@ let startGame = function() {
 startGameButton.addEventListener("click", startGame);
 
 socket.on("boardDimensions", function(dimensions) {
-    element("client-canvas").width = dimensions.width;
-    element("client-canvas").height = dimensions.height;
+    element("client-canvas").width = dimensions;
+    element("client-canvas").height = dimensions;
 });
 
 socket.on("selfPlayerState", function(data) {

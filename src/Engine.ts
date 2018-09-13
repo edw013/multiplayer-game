@@ -10,21 +10,14 @@ import { QuadTree, Bounds } from "./QuadTree";
 const TICKRATE: number = 60;
 const GAME_TIME: number = 60;
 const INSET: number = 75;
+const BASE_SIZE: number = 500;
+const ADD_SIZE: number = 100;
 const DEBUG: boolean = true;
-
-class Dimensions {
-    public width: number;
-    public height: number;
-
-    public constructor(width: number, height: number) {
-        this.width = width;
-        this.height = height;
-    }
-}
 
 class Engine {
     private roomId: string;
-    private dimensions: Dimensions;
+    private dimensions: number;
+    private startTimeout: NodeJS.Timer;
     private players: Map<string, Player>;
     private numPlayers: number;
     private numAlive: number;
@@ -46,9 +39,10 @@ class Engine {
 
     public constructor(roomId: string, players: Set<string>, socket: socketIo.Server) {
         this.roomId = roomId;
-        this.dimensions = new Dimensions(500, 500);
         this.players = new Map<string, Player>();
         this.numPlayers = players.size;
+        let additionalPlayers: number = this.numPlayers - 2;
+        this.dimensions = BASE_SIZE + (additionalPlayers * ADD_SIZE);
         this.numAlive = players.size;
         this.tiles = new Map<string, Tile>();
         this.bullets = new Map<string, Bullet>();
@@ -59,7 +53,7 @@ class Engine {
         this.updateTiles = [];
         this.socket = socket;
 
-        this.tree = new QuadTree(new Bounds(0, 0, this.dimensions.width, this.dimensions.height), 4, 10);
+        this.tree = new QuadTree(new Bounds(0, 0, this.dimensions, this.dimensions), 4, 10);
 
         this.tileCounter = 0;
         this.bulletCounter = 0;
@@ -99,14 +93,20 @@ class Engine {
         // call this.setUpdateInterval when timer hits 0 to begin game
         this.socket.to(this.roomId).emit("startCountdown");
 
-        setTimeout(() => {
+        this.startTimeout = setTimeout(() => {
             this.socket.to(this.roomId).emit("startGame");
             this.setUpdateInterval();
         }, 1000 * 3);
     }
 
     public shutdown() {
-        clearInterval(this.updateInterval);
+        if (this.startTimeout) {
+            clearTimeout(this.startTimeout);
+        }
+
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
     }
 
     private endGame() {
@@ -148,25 +148,23 @@ class Engine {
         return id;
     }
 
-    private getDimensions(): Dimensions {
+    private getDimensions(): number {
         return this.dimensions;
     }
 
     private initializePlayers() {
         // calculate perimeter - maybe like 75 units or so in
-        let startPosWidth: number = this.dimensions.width - (2 * INSET);
-        let startPosHeight: number = this.dimensions.height - (2 * INSET);
-
-        let perimeter: number = (2 * startPosWidth) + (2 * startPosHeight);
+        let startDimensions = this.dimensions - (2 * INSET);
+        let perimeter: number = 4 * startDimensions;
         let increment: number = Math.floor(perimeter / this.numPlayers);
 
         // distribute players starting from 0
         let curX: number = INSET;
         let curY: number = INSET;
         let minX: number = INSET;
-        let maxX: number = startPosWidth + INSET;
+        let maxX: number = startDimensions + INSET;
         let minY: number = INSET;
-        let maxY: number = startPosHeight + INSET;
+        let maxY: number = startDimensions + INSET;
         for (let pid in this.players) {
             let player: Player = this.players[pid];
             player.setX(curX);
@@ -212,10 +210,9 @@ class Engine {
 
     private spawnTile() {
         let tileInset: number =  2 * INSET;
-        let xBound: number = this.dimensions.width - (2 * tileInset);
-        let yBound: number = this.dimensions.height - (2 * tileInset);
-        let x: number = Math.floor(Math.random() * xBound) + tileInset;
-        let y: number = Math.floor(Math.random() * yBound) + tileInset;
+        let bounds: number = this.dimensions - (2 * tileInset);
+        let x: number = Math.floor(Math.random() * bounds) + tileInset;
+        let y: number = Math.floor(Math.random() * bounds) + tileInset;
 
         let id = this.tileCounter.toString();
         this.tileCounter++;
@@ -314,7 +311,7 @@ class Engine {
             let bullet: Bullet = this.bullets[key];
             bullet.updatePosition(1 / 60);
 
-            if (bullet.getX() < 0 || bullet.getX() > this.dimensions.width || bullet.getY() < 0 || bullet.getY() > this.dimensions.height) {
+            if (bullet.getX() < 0 || bullet.getX() > this.dimensions || bullet.getY() < 0 || bullet.getY() > this.dimensions) {
                 bullet.destroy();
 
                 continue;
@@ -405,8 +402,7 @@ class Engine {
         if (player1.isInvincible()) {
             if (!player2.isInvincible()) {
                 player2.die("you touched an invincible player");
-                player1.incrementScore();
-                this.numAlive--;
+                player1.incrementScore();       
             }
         }
 
@@ -415,7 +411,6 @@ class Engine {
                 if (!player2.isFire()) {
                     player2.die("someone lit you on fire!");
                     player1.incrementScore();
-                    this.numAlive--;
                 }
             }
         }
@@ -435,8 +430,6 @@ class Engine {
 
             let playerKiller = this.players[bullet.getParentId()];
             playerKiller.incrementScore();
-
-            this.numAlive--;
         }
 
         bullet.destroy();
@@ -458,8 +451,6 @@ class Engine {
                 let playerKiller = this.players[bomb.getParentId()];
                 playerKiller.incrementScore();
             }
-
-            this.numAlive--;
         }
     }
 
@@ -490,6 +481,7 @@ class Engine {
 
             if (!player.isAlive()) {
                 if (player.isRecentDead()) {
+                    this.numAlive--;
                     player.resetRecentDead();
                 }
                 else {

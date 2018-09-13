@@ -22,7 +22,7 @@ server.listen(port, function(){
     console.log("listening on *:", port);
 });
 
-let rooms = {};
+let rooms = new Map<string, Room>();
 
 let getCurRooms = function() {
     let curRooms: {id: string, cur: number, size: number}[] = [];
@@ -41,6 +41,27 @@ let getCurRooms = function() {
     return curRooms;
 }
 
+let socketLeaveRoom = function(socket) {
+    if (socket.room === null) {
+        return;
+    }
+
+    let room: Room = rooms[socket.room];
+
+    let toDelete: boolean = room.removePlayer(socket.id);
+
+    if (toDelete) {
+        console.log("deleting " + socket.room);
+        rooms[socket.room].delete();
+        delete rooms[socket.room];
+    }
+
+    socket.leave(socket.room);
+    socket.room = null;
+
+    io.emit("currentRooms", getCurRooms());
+}
+
 // socket v2
 io.on("connection", function(socket) {
     console.log("a user connected");
@@ -52,27 +73,7 @@ io.on("connection", function(socket) {
         console.log("a user disconnected");
 
         // leave room if joined one
-        if (socket.room === null) {
-            return;
-        }
-
-        let room: Room = rooms[socket.room];
-
-        let newOwner: string = room.removePlayer(socket.id);
-
-        if (newOwner === null) {
-            rooms[socket.room].delete();
-            delete rooms[socket.room];
-
-            console.log("deleted room " + socket.room);
-        }
-        else {
-            console.log("transferring ownership of " + socket.room + " to " + newOwner);
-            io.to(newOwner).emit("newRoomOwner");
-        }
-
-        socket.leave(socket.room);
-        socket.room = null;
+        socketLeaveRoom(socket);
     });
 
     socket.on("createRoom", function(data, callback: Function) {
@@ -137,31 +138,7 @@ io.on("connection", function(socket) {
     });
 
     socket.on("leaveRoom", function(callback: Function) {
-        if (socket.room === null) {
-            return;
-        }
-
-        let room: Room = rooms[socket.room];
-
-        let newOwner: string = room.removePlayer(socket.id);
-
-        if (newOwner === null) {
-            rooms[socket.room].delete();
-            delete rooms[socket.room];
-
-            console.log("deleted " + socket.room);
-
-            io.emit("currentRooms", getCurRooms());
-        }
-        else {
-            console.log("transferring ownership of " + socket.room + " to " + newOwner);
-            io.to(newOwner).emit("newRoomOwner");
-        }
-
-        socket.leave(socket.room);
-        socket.room = null;
-
-        io.emit("currentRooms", getCurRooms());
+        socketLeaveRoom(socket);
 
         callback(true);
     });
