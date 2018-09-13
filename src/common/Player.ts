@@ -1,6 +1,8 @@
 import GameObject from "../GameObject";
 import { Input, Buffs, Debuffs } from "./Utilities";
 
+const DEBUG: boolean = false;
+
 class Player extends GameObject {
     private score: number;
     private moveSpeed: number;
@@ -52,6 +54,9 @@ class Player extends GameObject {
     }
 
     public die(reason: string) {
+        if (DEBUG) {
+            console.log(this.id + " died to " + reason);
+        }
         this.alive = false;
     
         this.recentDead = true;

@@ -8,7 +8,9 @@ import Bomb from "./Bomb";
 import { QuadTree, Bounds } from "./QuadTree";
 
 const TICKRATE: number = 60;
+const GAME_TIME: number = 60;
 const INSET: number = 75;
+const DEBUG: boolean = true;
 
 class Dimensions {
     public width: number;
@@ -35,7 +37,6 @@ class Engine {
     private updateProjectiles: ProjectileState[];
     private updateTiles: TileState[];
     private socket: socketIo.Server;
-    private updateRate: number;
     private tree: QuadTree;
     private tileCounter: number;
     private bulletCounter: number;
@@ -57,7 +58,6 @@ class Engine {
         this.updateProjectiles = [];
         this.updateTiles = [];
         this.socket = socket;
-        this.updateRate = TICKRATE;
 
         this.tree = new QuadTree(new Bounds(0, 0, this.dimensions.width, this.dimensions.height), 4, 10);
 
@@ -111,13 +111,14 @@ class Engine {
 
     private endGame() {
         clearInterval(this.updateInterval);
+        console.log("game ended");
 
         // called when updateinterval sees that all but one player (or all players) are dead.
         // winner is either last person standing or in case of tie the player of the last two
         // alive with the most kills
-        let winner = this.determineWinner();
+        /*let winner = this.determineWinner();
 
-        this.socket.to(this.roomId).emit("winner", winner);
+        this.socket.to(this.roomId).emit("winner", winner);*/
 
         // move to wheel part
     }
@@ -244,7 +245,7 @@ class Engine {
     private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
-        let numTicks: number = 60 * 60;
+        let numTicks: number = GAME_TIME * TICKRATE;
         this.updateInterval = setInterval(() => {
             if (numTicks === 0) {
                 this.endGame();
@@ -263,7 +264,7 @@ class Engine {
 
             this.sendTileState();
             this.checkGameState();   
-        }, 1000 / this.updateRate); // 60 times / sec
+        }, 1000 / TICKRATE); // 60 times / sec
     }
 
     private checkGameState() {
@@ -271,7 +272,7 @@ class Engine {
             return;
         }
 
-        //this.endGame();
+        this.endGame();
     }
 
     // process all pending
@@ -325,7 +326,7 @@ class Engine {
         for (let key in this.bombs) {
             let bomb: Bomb = this.bombs[key];
 
-            if (bomb.isExploded()) {
+            if (bomb.isExploded() && !bomb.isDestroyed()) {
                 this.tree.insert(bomb);
             }
         }
@@ -335,7 +336,7 @@ class Engine {
         for (let pid in this.players) {
             let player: Player = this.players[pid];
 
-            if (!player) {
+            if (!player || !player.isAlive()) {
                 continue;
             }
 
@@ -453,8 +454,10 @@ class Engine {
         if (!player.isInvincible()) {
             player.die("you were blown up");
 
-            let playerKiller = this.players[bomb.getParentId()];
-            playerKiller.incrementScore();
+            if (pid !== bomb.getParentId()) {
+                let playerKiller = this.players[bomb.getParentId()];
+                playerKiller.incrementScore();
+            }
 
             this.numAlive--;
         }
@@ -490,6 +493,9 @@ class Engine {
                     player.resetRecentDead();
                 }
                 else {
+                    if (DEBUG) {
+                        console.log("skipping " + pid);
+                    }
                     continue;
                 }
             }
@@ -501,6 +507,7 @@ class Engine {
             this.updatePlayers.push(playerState);
         }
         // send new server state
+
         this.socket.to(this.roomId).emit("playerState", this.updatePlayers);
         this.updatePlayers = [];
     }
@@ -524,7 +531,7 @@ class Engine {
             let projectile: Bomb = this.bombs[id];
 
             if (projectile.isDestroyed()) {
-                delete this.bullets[id];
+                delete this.bombs[id];
 
                 continue;
             }
