@@ -210,7 +210,7 @@ class Engine {
     }
 
     private spawnTile() {
-        let tileInset: number =  4 * INSET;
+        let tileInset: number =  2 * INSET;
         let xBound: number = this.dimensions.width - (2 * tileInset);
         let yBound: number = this.dimensions.height - (2 * tileInset);
         let x: number = Math.floor(Math.random() * xBound) + tileInset;
@@ -244,15 +244,25 @@ class Engine {
     private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
+        let numTicks: number = 60 * 60;
         this.updateInterval = setInterval(() => {
+            if (numTicks === 0) {
+                this.endGame();
+            }
             this.processItemUses();
             this.processChanges();
             this.processShots();
             this.calculateCollisions();
             this.sendPlayerState();
             this.sendProjectileState();
+            
+            numTicks--;
+            if (numTicks % 300 === 0) {
+                this.spawnTile();
+            }
+
             this.sendTileState();
-            this.checkGameState();
+            this.checkGameState();   
         }, 1000 / this.updateRate); // 60 times / sec
     }
 
