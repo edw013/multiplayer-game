@@ -5,7 +5,7 @@
         canvas {
             border: 5px solid black;
         }
-        #controls {
+        .overlay {
             position: fixed;
             display: block;
             width: 100%;
@@ -28,7 +28,7 @@
 </head>
 
 <body>
-    <div id="controls">
+    <div id="controls" class="overlay">
         <span class="room">Room name: <input id="newname" type="text" maxlength="16" /></span>
         <br />
         <span class="room">Num users: <input id="newusers" type="number" /></span>
@@ -39,7 +39,7 @@
         <br />
         <button id="start" class="room">Start game in room (will only work if you are room owner!)</button>
     </div>
-    In room: <span id="room-current">Not in room</span>
+    ID: <span id="player-id"></span> In room: <span id="room-current">Not in room</span>
     <button id="room-leave">Leave current room</button><br />
     Score: <span id="score"></span><br />
     Available item: <span id="item"></span><br />   

@@ -10,6 +10,7 @@ var socket = io.connect();
 var client = null;
 socket.on("connect", () => {
     client = new Client(socket, element("client-canvas"), element("room-current"), element("controls"), element("score"), element("item"), element("powerup"), element("weapon"), element("ammo"), element("debuff"), element("death"));
+    element("player-id").innerHTML = socket.id;
 });
 
 // When the player presses the arrow keys, set the corresponding flag in the client.
@@ -138,4 +139,8 @@ socket.on("startGame", function() {
     canvas.addEventListener("click", mouseHandler, false);
 
     client.startGame();
+});
+
+socket.on("winner", function(winner) {
+    client.endGame(winner);
 });

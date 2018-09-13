@@ -109,35 +109,45 @@ class Engine {
         }
     }
 
-    private endGame() {
+    private endGame(byTimeout: boolean) {
         clearInterval(this.updateInterval);
         console.log("game ended");
 
         // called when updateinterval sees that all but one player (or all players) are dead.
         // winner is either last person standing or in case of tie the player of the last two
         // alive with the most kills
-        /*let winner = this.determineWinner();
+        let winner: string;
+        
+        if (byTimeout) {
+            winner = this.determineWinnerByKills(false);
+        }
+        else {
+            if (this.numAlive === 0) {
+                winner = this.determineWinnerByKills(true);
+            }
+            else {
+                winner = this.determineWinnerByLastAlive();
+            }
 
-        this.socket.to(this.roomId).emit("winner", winner);*/
+        }
+
+        this.socket.to(this.roomId).emit("winner", winner);
 
         // move to wheel part
     }
 
-    private determineWinner(): string {
-        if (this.numAlive === 1) {
-            for (let pid in this.players) {
-                let player: Player = this.players[pid];
-                if (player.isAlive()) {
-                    return player.getId();
-                }
-            }
-        }
-        
+    private determineWinnerByKills(limitedSet: boolean): string {  
         let highScore: number = 0;
         let id: string = null;
 
         for (let pid in this.players) {
             let player: Player = this.players[pid];
+
+            if (limitedSet) {
+                if (!player.isRecentDead()) {
+                    continue;
+                }
+            }
 
             if (player.getScore() > highScore) {
                 highScore = player.getScore();
@@ -145,7 +155,22 @@ class Engine {
             }
         }
 
+        // i guess this is possible?
+        if (highScore === 0) {
+            id = "no one?";
+        }
+
         return id;
+    }
+
+    private determineWinnerByLastAlive() {
+        for (let pid in this.players) {
+            let player: Player = this.players[pid];
+            if (player.isAlive()) {
+                // can only be one alive
+                return player.getId();
+            }
+        }
     }
 
     private getDimensions(): number {
@@ -245,7 +270,7 @@ class Engine {
         let numTicks: number = GAME_TIME * TICKRATE;
         this.updateInterval = setInterval(() => {
             if (numTicks === 0) {
-                this.endGame();
+                this.endGame(true);
             }
             this.processItemUses();
             this.processChanges();
@@ -269,7 +294,7 @@ class Engine {
             return;
         }
 
-        this.endGame();
+        this.endGame(false);
     }
 
     // process all pending
@@ -495,8 +520,8 @@ class Engine {
             let playerState: PlayerState = new PlayerState(pid, player.getWidth(), player.getX(), player.getY(), player.getPowerups(), player.getDebuffs(), player.getOutlineColor(), player.getColor());
             this.updatePlayers.push(playerState);
         }
-        // send new server state
 
+        // send new server state
         this.socket.to(this.roomId).emit("playerState", this.updatePlayers);
         this.updatePlayers = [];
     }

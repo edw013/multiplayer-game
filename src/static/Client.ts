@@ -94,6 +94,16 @@ class Client {
         this.setUpdateInterval();
     }
 
+    public endGame(winner: string) {
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
+
+        let ctx: CanvasRenderingContext2D = this.canvas.getContext("2d");
+        ctx.font = "20px Arial";
+        ctx.fillText("Winner: " + winner, this.canvas.width / 2, this.canvas.height / 2);
+    }
+
     private setUpdateInterval() {
         clearInterval(this.updateInterval);
 
