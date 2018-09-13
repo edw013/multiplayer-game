@@ -27,7 +27,8 @@ class Engine {
     private numPlayers: number;
     private numAlive: number;
     private tiles: Map<string, Tile>;
-    private projectiles: Map<string, GameObject>;
+    private bullets: Map<string, Bullet>;
+    private bombs: Map<string, Bomb>;
     private pendingMoves: Map<string, Input[]>;
     private updateInterval: NodeJS.Timer;
     private updatePlayers: PlayerState[];
@@ -37,7 +38,8 @@ class Engine {
     private updateRate: number;
     private tree: QuadTree;
     private tileCounter: number;
-    private projectileCounter: number;
+    private bulletCounter: number;
+    private bombCounter: number;
     private itemQueue: string[];
     private shotQueue: ShotState[];
 
@@ -48,7 +50,8 @@ class Engine {
         this.numPlayers = players.size;
         this.numAlive = players.size;
         this.tiles = new Map<string, Tile>();
-        this.projectiles = new Map<string, GameObject>();
+        this.bullets = new Map<string, Bullet>();
+        this.bombs = new Map<string, Bomb>();
         this.pendingMoves = new Map<string, Input[]>();
         this.updatePlayers = [];
         this.updateProjectiles = [];
@@ -59,7 +62,8 @@ class Engine {
         this.tree = new QuadTree(new Bounds(0, 0, this.dimensions.width, this.dimensions.height), 4, 10);
 
         this.tileCounter = 0;
-        this.projectileCounter = 0;
+        this.bulletCounter = 0;
+        this.bombCounter = 0;
 
         this.itemQueue = [];
         this.shotQueue = [];
@@ -295,29 +299,24 @@ class Engine {
             this.tree.insert(this.tiles[key]);
         }
 
-        for (let key in this.projectiles) {
-            let projectile = this.projectiles[key];
-            let type: string = projectile.getObjType();
+        for (let key in this.bullets) {
+            let bullet: Bullet = this.bullets[key];
+            bullet.updatePosition(1 / 60);
 
-            if (type === "bullet") {
-                let bullet = <Bullet> projectile;
+            if (bullet.getX() < 0 || bullet.getX() > this.dimensions.width || bullet.getY() < 0 || bullet.getY() > this.dimensions.height) {
+                bullet.destroy();
 
-                bullet.updatePosition(1 / 60);
-
-                if (bullet.getX() < 0 || bullet.getX() > this.dimensions.width || bullet.getY() < 0 || bullet.getY() > this.dimensions.height) {
-                    bullet.destroy();
-
-                    continue;
-                }
-
-                this.tree.insert(bullet);
+                continue;
             }
-            else if (type === "bomb") {
-                let bomb = <Bomb> projectile;
 
-                if (bomb.isExploded()) {
-                    this.tree.insert(bomb);
-                }
+            this.tree.insert(bullet);
+        }
+
+        for (let key in this.bombs) {
+            let bomb: Bomb = this.bombs[key];
+
+            if (bomb.isExploded()) {
+                this.tree.insert(bomb);
             }
         }
     }
@@ -418,7 +417,7 @@ class Engine {
             return;
         }
 
-        let bullet = <Bullet> this.projectiles[bid];
+        let bullet = this.bullets[bid];
 
         if (!player.isInvincible()) {
             player.die("you were hit by a bullet");
@@ -439,7 +438,7 @@ class Engine {
             return;
         }
 
-        let bomb = <Bomb> this.projectiles[bid];
+        let bomb = this.bombs[bid];
 
         if (!player.isInvincible()) {
             player.die("you were blown up");
@@ -497,11 +496,25 @@ class Engine {
     }
 
     private sendProjectileState() {
-        for (let id in this.projectiles) {
-            let projectile = this.projectiles[id];
+        // this can be better i think
+        for (let id in this.bullets) {
+            let projectile: Bullet = this.bullets[id];
 
             if (projectile.isDestroyed()) {
-                delete this.projectiles[id];
+                delete this.bullets[id];
+
+                continue;
+            }
+
+            let projState: ProjectileState = new ProjectileState(projectile.getWidth(), projectile.getX(), projectile.getY(), projectile.getOutlineColor(), projectile.getColor());
+            this.updateProjectiles.push(projState);
+        }
+
+        for (let id in this.bombs) {
+            let projectile: Bomb = this.bombs[id];
+
+            if (projectile.isDestroyed()) {
+                delete this.bullets[id];
 
                 continue;
             }
@@ -609,11 +622,11 @@ class Engine {
         let deltaX = targetX - initX;
         let deltaY = targetY - initY;
 
-        let id: string = this.projectileCounter.toString();
-        this.projectileCounter++;
+        let id: string = this.bulletCounter.toString();
+        this.bulletCounter++;
         let bullet = new Bullet(id, pid, initX, initY, deltaX, deltaY);
 
-        this.projectiles[id] = bullet;
+        this.bullets[id] = bullet;
 
         player.setAmmo(player.getAmmo() - 1);
     }
@@ -629,11 +642,11 @@ class Engine {
             return;
         }
 
-        let id: string = this.projectileCounter.toString();
-        this.projectileCounter++;
+        let id: string = this.bombCounter.toString();
+        this.bombCounter++;
         let bomb = new Bomb(id, pid, targetX, targetY);
 
-        this.projectiles[id] = bomb;
+        this.bombs[id] = bomb;
         bomb.start();
 
         player.setAmmo(player.getAmmo() - 1);
