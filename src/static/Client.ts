@@ -18,6 +18,8 @@ class Client {
     private serverTileMessages: TileState[];
     private canvas: HTMLCanvasElement;
     private room: HTMLElement;
+    private roomControls: HTMLElement;
+    private score: HTMLElement;
     private item: HTMLElement;
     private powerup: HTMLElement;
     private weapon: HTMLElement;
@@ -25,7 +27,7 @@ class Client {
     private debuff: HTMLElement;
     private deathMessage: HTMLElement;
     
-    public constructor(socket: SocketIOClient.Socket, canvas: HTMLCanvasElement, room: HTMLElement, item: HTMLElement, powerup: HTMLElement, weapon: HTMLElement, ammo: HTMLElement, debuff: HTMLElement, deathMessage: HTMLElement) {
+    public constructor(socket: SocketIOClient.Socket, canvas: HTMLCanvasElement, room: HTMLElement, roomControls: HTMLElement, score: HTMLElement, item: HTMLElement, powerup: HTMLElement, weapon: HTMLElement, ammo: HTMLElement, debuff: HTMLElement, deathMessage: HTMLElement) {
         this.socket = socket;
 
         this.playerId = this.socket.id;
@@ -36,6 +38,8 @@ class Client {
 
         this.canvas = canvas;
         this.room = room;
+        this.roomControls = roomControls;
+        this.score = score;
         this.item = item;
         this.powerup = powerup;
         this.weapon = weapon;
@@ -45,6 +49,7 @@ class Client {
     }
 
     public initialize() {
+        this.roomControls.style.display = "none";
         let message = this.selfUpdate;
         this.selfUpdate = null;
         this.player = new Player(this.playerId);
@@ -140,6 +145,7 @@ class Client {
 
         this.socket.emit("leaveRoom", left => {
             if (left) {
+                this.roomControls.style.display = "block";
                 this.reset()
             }
         });
@@ -153,6 +159,7 @@ class Client {
         this.serverTileMessages = [];
 
         this.room.innerHTML = "Not in room";
+        this.score.innerHTML = "";
         this.item.innerHTML = "";
         this.powerup.innerHTML = "";
         this.weapon.innerHTML = "";
@@ -219,6 +226,7 @@ class Client {
                 this.deathMessage.innerHTML = this.player.getDeathReason();
             }
 
+            this.score.innerHTML = message.score.toString();
             this.item.innerHTML = message.item;
 
             this.player.setPowerups(message.powerups);

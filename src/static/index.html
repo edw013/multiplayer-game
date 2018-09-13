@@ -5,24 +5,43 @@
         canvas {
             border: 5px solid black;
         }
+        #controls {
+            position: fixed;
+            display: block;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 2;
+            cursor: pointer;
+            color: white;
+            text-align: left;
+        }
+        .room  {
+            margin-left: 20%;
+        }
     </style>
 
 </head>
 
 <body>
-    In room: <span id="inRoom">Not in room</span>
-    <button id="toggleRooms">Toggle room controls</button><br />
-    <div id="roomControls">
-        <button id="createRoom">Create a new room</button>
-        Room name: <input id="roomName" type="text" maxlength="16" />
-        Num users: <input id="roomNumUsers" type="number" />
+    <div id="controls">
+        <span class="room">Room name: <input id="newname" type="text" maxlength="16" /></span>
         <br />
-        <button id="joinRoom">Join an existing room</button>
-        <select id="currentRooms"></select>
+        <span class="room">Num users: <input id="newusers" type="number" /></span>
         <br />
-        <button id="leaveRoom">Leave current room</button>
-        <button id="startGame">Start game in room (will only work if you are room owner!)</button>
+        <button id="create" class="room">Create a new room</button>
+        <br />
+        <span class="room"><button id="join">Join an existing room</button><select id="existing"></select>
+        <br />
+        <button id="start" class="room">Start game in room (will only work if you are room owner!)</button>
     </div>
+    In room: <span id="room-current">Not in room</span>
+    <button id="room-leave">Leave current room</button><br />
+    Score: <span id="score"></span><br />
     Available item: <span id="item"></span><br />   
     Current power up: <span id="powerup"></span><br />
     Current weapon: <span id="weapon"></span><br />
@@ -30,9 +49,8 @@
     Current debuff: <span id="debuff"></span><br />
     Reason for death: <span id="death">none</span><br />
     <br />
-    <canvas id="client_canvas" width="920" height="920">
+    <canvas id="client-canvas" width="920" height="920">
     </canvas>
-    <div id="client_status" style="font-family:courier;">
 </body>
 <script src="/socket.io/socket.io.js"></script>
 <script src="./classes.js"></script>

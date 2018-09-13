@@ -9,7 +9,7 @@ var socket = io.connect();
 
 var client = null;
 socket.on("connect", () => {
-    client = new Client(socket, element("client_canvas"), element("inRoom"), element("item"), element("powerup"), element("weapon"), element("ammo"), element("debuff"), element("death"));
+    client = new Client(socket, element("client-canvas"), element("room-current"), element("controls"), element("score"), element("item"), element("powerup"), element("weapon"), element("ammo"), element("debuff"), element("death"));
 });
 
 // When the player presses the arrow keys, set the corresponding flag in the client.
@@ -28,30 +28,18 @@ let keyHandler = function (e) {
     }
 };
 
-let canvas = element("client_canvas");
+let canvas = element("client-canvas");
 let mouseHandler = function (e) {
     let rect = canvas.getBoundingClientRect();
     let x = e.clientX - rect.left;
     let y = e.clientY - rect.top;
     client.shot(x, y);
 }
-//document.body.onmousedown = mouseHandler;
-let toggleRoomsButton = element("toggleRooms");
-let toggleRooms = function() {
-    let ele = element("roomControls");
-    if (ele.style.display === "none") {
-        ele.style.display = "block";
-    }
-    else {
-        ele.style.display = "none";
-    }
-};
-toggleRoomsButton.addEventListener("click", toggleRooms);
 
-let createRoomButton = element("createRoom");
+let createRoomButton = element("create");
 let createRoom = function() {
-    let roomId = element("roomName").value;
-    let roomNumUsers = element("roomNumUsers").value;
+    let roomId = element("newname").value;
+    let roomNumUsers = element("newusers").value;
     
     if (client === undefined) {
         alert("Client not finished loading yet, try again.");
@@ -70,7 +58,7 @@ let createRoom = function() {
 createRoomButton.addEventListener("click", createRoom);
 
 socket.on("currentRooms", function(rooms) {
-    let curRooms = element("currentRooms");
+    let curRooms = element("existing");
     for (let opt in curRooms.options) { 
         curRooms.options.remove(0); 
     }
@@ -84,9 +72,9 @@ socket.on("currentRooms", function(rooms) {
     }
 });
 
-let joinRoomButton = element("joinRoom");
+let joinRoomButton = element("join");
 let joinRoom = function() {
-    let select = element("currentRooms");
+    let select = element("existing");
     let roomId;
     if (select.options[select.selectedIndex]) {
         roomId = select.options[select.selectedIndex].value;
@@ -107,21 +95,21 @@ let joinRoom = function() {
 };
 joinRoomButton.addEventListener("click", joinRoom);
 
-let leaveRoomButton = element("leaveRoom");
+let leaveRoomButton = element("room-leave");
 let leaveRoom = function() {
     client.leaveRoom();
 };
 leaveRoomButton.addEventListener("click", leaveRoom);
 
-let startGameButton = element("startGame");
+let startGameButton = element("start");
 let startGame = function() {
     client.signalStartGame();
 };
 startGameButton.addEventListener("click", startGame);
 
 socket.on("boardDimensions", function(dimensions) {
-    element("client_canvas").width = dimensions.width;
-    element("client_canvas").height = dimensions.height;
+    element("client-canvas").width = dimensions.width;
+    element("client-canvas").height = dimensions.height;
 });
 
 socket.on("selfPlayerState", function(data) {

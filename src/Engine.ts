@@ -493,9 +493,6 @@ class Engine {
                     player.resetRecentDead();
                 }
                 else {
-                    if (DEBUG) {
-                        console.log("skipping " + pid);
-                    }
                     continue;
                 }
             }
