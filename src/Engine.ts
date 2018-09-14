@@ -145,7 +145,7 @@ class Engine {
             let player: Player = this.players[pid];
 
             if (limitedSet) {
-                if (!player.isRecentDead()) {
+                if (!player.isRecentDeadScore()) {
                     continue;
                 }
             }
@@ -272,9 +272,6 @@ class Engine {
 
         let numTicks: number = GAME_TIME * TICKRATE;
         this.updateInterval = setInterval(() => {
-            if (numTicks === 0) {
-                this.endGame(true);
-            }
             this.processItemUses();
             this.processChanges();
             this.processShots();
@@ -282,6 +279,10 @@ class Engine {
             this.sendPlayerState();
             this.sendProjectileState();
             
+            if (numTicks === 0) {
+                this.endGame(true);
+            }
+
             numTicks--;
             if (numTicks % 300 === 0) {
                 this.spawnTile();
@@ -544,17 +545,49 @@ class Engine {
             if (!player.isAlive()) {
                 if (player.isRecentDead()) {
                     this.numAlive--;
+
                     player.resetRecentDead();
+                }
+                else if (player.isRecentDeadScore()) {
+                    player.resetRecentDeadScore();
                 }
                 else {
                     continue;
                 }
             }
 
-            let selfPlayerState: SelfPlayerState = new SelfPlayerState(player.getWidth(), player.getX(), player.getY(), player.getLastTS(), player.isAlive(), player.getScore(), player.getDeathReason(), player.getItem(), player.getPowerups(), player.getDebuffs(), player.getWeapon(), player.getAmmo(), player.getOutlineColor(), player.getColor());
+            let selfPlayerState: SelfPlayerState = new SelfPlayerState
+            (
+                player.getWidth(),
+                player.getX(),
+                player.getY(),
+                player.getLastTS(),
+                player.isAlive(),
+                player.getScore(),
+                player.getDeathReason(),
+                player.getItem(),
+                player.getPowerups(),
+                player.getDebuffs(),
+                player.getWeapon(),
+                player.getAmmo(),
+                player.getOutlineColor(),
+                player.getColor() 
+            );
+
             this.socket.to(pid).emit("selfPlayerState", selfPlayerState);
 
-            let playerState: PlayerState = new PlayerState(pid, player.getWidth(), player.getX(), player.getY(), player.getPowerups(), player.getDebuffs(), player.getOutlineColor(), player.getColor());
+            let playerState: PlayerState = new PlayerState
+            (
+                pid,
+                player.getWidth(),
+                player.getX(),
+                player.getY(),
+                player.getPowerups(),
+                player.getDebuffs(),
+                player.getOutlineColor(),
+                player.getColor()
+            );
+
             this.updatePlayers.push(playerState);
         }
 
@@ -574,7 +607,15 @@ class Engine {
                 continue;
             }
 
-            let projState: ProjectileState = new ProjectileState(projectile.getWidth(), projectile.getX(), projectile.getY(), projectile.getOutlineColor(), projectile.getColor());
+            let projState: ProjectileState = new ProjectileState
+            (
+                projectile.getWidth(),
+                projectile.getX(),
+                projectile.getY(),
+                projectile.getOutlineColor(),
+                projectile.getColor()
+            );
+
             this.updateProjectiles.push(projState);
         }
 
@@ -587,7 +628,15 @@ class Engine {
                 continue;
             }
 
-            let projState: ProjectileState = new ProjectileState(projectile.getWidth(), projectile.getX(), projectile.getY(), projectile.getOutlineColor(), projectile.getColor());
+            let projState: ProjectileState = new ProjectileState
+            (
+                projectile.getWidth(),
+                projectile.getX(),
+                projectile.getY(),
+                projectile.getOutlineColor(),
+                projectile.getColor()
+            );
+
             this.updateProjectiles.push(projState);
         }
 

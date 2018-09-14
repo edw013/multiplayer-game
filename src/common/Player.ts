@@ -8,6 +8,8 @@ class Player extends GameObject {
     private moveSpeed: number;
     private alive: boolean;
     private recentDead: boolean;
+    // for scoring purposes if multiple people die at the same time
+    private recentDeadScore: boolean;
     private lastTS: number;
     private item: string;
     private itemType: string;
@@ -30,6 +32,7 @@ class Player extends GameObject {
         this.height = 60;
         this.alive = true;
         this.recentDead = false;
+        this.recentDeadScore = false;
         this.lastTS = Date.now();
 
         this.item = "none";
@@ -51,6 +54,15 @@ class Player extends GameObject {
 
     public resetRecentDead() {
         this.recentDead = false;
+        this.recentDeadScore = true;
+    }
+
+    public isRecentDeadScore(): boolean {
+        return this.recentDeadScore;
+    }
+
+    public resetRecentDeadScore() {
+        this.recentDeadScore = false;
     }
 
     public die(reason: string) {
