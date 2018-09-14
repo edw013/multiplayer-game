@@ -1,3 +1,40 @@
+class Bounds {
+    public x: number;
+    public y: number;
+    public width: number;
+
+    public constructor(x: number, y: number, width: number) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+    }
+}
+
+class PlayingField {
+    private bounds: Bounds;
+    private rate: number;
+
+    public constructor(width: number, gameTime: number) {
+        this.bounds = new Bounds(0, 0, width);
+        this.rate = Math.ceil(gameTime / width) * 2;
+    }
+
+    public shrink() {
+        // width and height shrink by twice as much because we want to remove from both sides
+        this.bounds.x += 1;
+        this.bounds.y += 1;
+        this.bounds.width -= 2;
+    }
+
+    public getBounds(): Bounds {
+        return this.bounds;
+    }
+
+    public getRate(): number {
+        return this.rate;
+    }
+}
+
 class Input {
     public room: string;
     public id: string;
@@ -146,4 +183,4 @@ class ShotState {
     }
 }
 
-export { Input, Movement, Buffs, Debuffs, SelfPlayerState, PlayerState, ProjectileState, TileState, ShotState };
+export { Bounds, PlayingField, Input, Movement, Buffs, Debuffs, SelfPlayerState, PlayerState, ProjectileState, TileState, ShotState };

@@ -125,8 +125,12 @@ socket.on("projectileState", function(data) {
     client.addServerProjectilePosition(data);
 });
 
-socket.on("tileState", function(data){
+socket.on("tileState", function(data) {
     client.addServerTilePosition(data);
+});
+
+socket.on("playingField", function(bounds) {
+    client.updatePlayingField(bounds);
 });
 
 socket.on("startCountdown", function() {

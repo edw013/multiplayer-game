@@ -1,18 +1,6 @@
 import GameObject from "./GameObject";
+import { Bounds } from "./common/Utilities";
 
-class Bounds {
-    public x: number;
-    public y: number;
-    public width: number;
-    public height: number;
-
-    public constructor(x: number, y: number, width: number, height: number) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-    }
-}
 // used for better collision checking
 class QuadTree {
     private root: Node;
@@ -111,13 +99,12 @@ class Node {
 
     private split() {
         let splitWidth: number = this.bounds.width / 2;
-        let splitHeight: number = this.bounds.height / 2;
         let x: number = this.bounds.x;
         let y: number = this.bounds.y;
 
         let level: number = this.level + 1;
         // create new bounds object
-        let bounds: Bounds = new Bounds(x, y, splitWidth, splitHeight);
+        let bounds: Bounds = new Bounds(x, y, splitWidth);
 
         // top left
         this.nodes[0] = new Node(bounds, level, this.maxObjects, this.maxLevels);
@@ -129,7 +116,7 @@ class Node {
 
         // bottom left
         bounds.x = x;
-        bounds.y = y + splitHeight;
+        bounds.y = y + splitWidth;
         this.nodes[2] = new Node(bounds, level, this.maxObjects, this.maxLevels);
 
         // bottom right
@@ -141,15 +128,15 @@ class Node {
     // find which node the item falls into
     private getIndex(item: GameObject): number {
         let vertMid: number = this.bounds.x + this.bounds.width / 2;
-        let horMid: number = this.bounds.y + this.bounds.height / 2;
+        let horMid: number = this.bounds.y + this.bounds.width / 2;
 
         // make sure the item actually fits
         // item.x is the center for everything (easier to draw circles?), keep this in mind
         // when drawing rectangles
         let itemLeft: number = item.getX() - item.getWidth() / 2;
         let itemRight: number = item.getX() + item.getWidth() / 2;
-        let itemTop: number = item.getY() - item.getHeight() / 2;
-        let itemBottom: number = item.getY() + item.getHeight();
+        let itemTop: number = item.getY() - item.getWidth() / 2;
+        let itemBottom: number = item.getY() + item.getWidth() / 2;
 
         let index: number = -1;
 
@@ -165,7 +152,7 @@ class Node {
             }
         }
         // bottom
-        else if (itemTop >= horMid && itemBottom <= this.bounds.y + this.bounds.height) {
+        else if (itemTop >= horMid && itemBottom <= this.bounds.y + this.bounds.width) {
             // left
             if (itemLeft >= this.bounds.x && itemRight <= vertMid) {
                 index = 2;

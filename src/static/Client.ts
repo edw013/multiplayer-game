@@ -1,5 +1,5 @@
 import Player from "../common/Player";
-import { Input, Movement, SelfPlayerState, PlayerState, ProjectileState, TileState, ShotState } from "../common/Utilities";
+import { Bounds, Input, Movement, SelfPlayerState, PlayerState, ProjectileState, TileState, ShotState } from "../common/Utilities";
 
 const TICKRATE: number = 60;
 
@@ -16,6 +16,9 @@ class Client {
     private serverPlayerMessages: PlayerState[];
     private serverProjectileMessages: ProjectileState[];
     private serverTileMessages: TileState[];
+    private playingField: Bounds;
+    private ended: boolean;
+    private winner: string;
     private canvas: HTMLCanvasElement;
     private room: HTMLElement;
     private roomControls: HTMLElement;
@@ -50,6 +53,8 @@ class Client {
 
     public initialize() {
         this.roomControls.style.display = "none";
+        this.ended = false;
+        this.winner = "";
         let message = this.selfUpdate;
         this.selfUpdate = null;
         this.player = new Player(this.playerId);
@@ -79,6 +84,7 @@ class Client {
 
     private paintCountdown(countdown: number) {
         this.repaint();
+        console.log("painting countdown");
         let ctx: CanvasRenderingContext2D = this.canvas.getContext("2d");
         ctx.font = "30px Arial";
         ctx.fillText(countdown.toString(), this.canvas.width / 2, this.canvas.height / 2);
@@ -95,13 +101,14 @@ class Client {
     }
 
     public endGame(winner: string) {
-        if (this.updateInterval) {
-            clearInterval(this.updateInterval);
-        }
+        this.ended = true;
+        this.winner = winner;
+    }
 
+    private displayWinner() {
         let ctx: CanvasRenderingContext2D = this.canvas.getContext("2d");
         ctx.font = "20px Arial";
-        ctx.fillText("Winner: " + winner, this.canvas.width / 2, this.canvas.height / 2);
+        ctx.fillText("Winner: " + this.winner, this.canvas.width / 4, this.canvas.height / 2);
     }
 
     private setUpdateInterval() {
@@ -111,11 +118,19 @@ class Client {
                 this.updatePlayerPositions();
                 this.updateSelfPosition();
                 this.repaint();
+                if (this.ended) {
+                    clearInterval(this.updateInterval);
+                    this.displayWinner();
+                }
         }, 1000.0 / TICKRATE);
     }
 
     public addSelfUpdate(data: SelfPlayerState) {
         this.selfUpdate = data;
+    }
+    
+    public updatePlayingField(bounds: Bounds) {
+        this.playingField = bounds;
     }
 
     public createRoom(roomId: string, numUsers: number) {
@@ -167,6 +182,8 @@ class Client {
         this.serverPlayerMessages = [];
         this.serverProjectileMessages = [];
         this.serverTileMessages = [];
+        this.selfUpdate = null;
+        this.playingField = null;
 
         this.room.innerHTML = "Not in room";
         this.score.innerHTML = "";
@@ -432,6 +449,19 @@ class Client {
             ctx.lineWidth = 5;
             
             ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // playing field
+        if (this.playingField) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(this.playingField.x, this.playingField.y, this.playingField.width, this.playingField.width);
+
+            ctx.strokeStyle = "aqua";
+            ctx.lineWidth = 10;
+
             ctx.stroke();
             ctx.restore();
         }
