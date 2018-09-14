@@ -146,7 +146,7 @@ class Player extends GameObject {
 
             setTimeout(() => {
                 this.die("you burned to death");
-            }, 1000 * 5);
+            }, 1000 * 15);
         }
         else {
             this.item = type;
@@ -213,7 +213,7 @@ class Player extends GameObject {
         // start timer
         this.buffTimer = setTimeout(() => {
             this.removePowerup();
-        }, 1000 * 15);
+        }, 1000 * 10);
     }
 
     public removePowerup() {

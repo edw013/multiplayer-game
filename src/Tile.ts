@@ -1,8 +1,8 @@
 import GameObject from "./GameObject";
 
-const LUCK: number = 1;
+const LUCK: number = 0.7;
 // "star", "ms", "invis", "bomb", "gun"
-const GOOD: string[] = ["bomb"];
+const GOOD: string[] = ["star", "ms", "invis", "bomb", "gun"];
 // "fall", "trap", "fire"
 const BAD: string[] = ["fall", "trap", "fire"];
 
